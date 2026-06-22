@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import CommentSection from "./CommentSection"
 import StatusTimeline from "./StatusTimeline"
-import { Clock, ShieldAlert } from "lucide-react"
+import SatisfactionSurvey from "./SatisfactionSurvey"
+import { Clock, ShieldAlert, FileText } from "lucide-react"
 
 export default async function GrievanceDetailsPage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions)
@@ -90,10 +91,19 @@ export default async function GrievanceDetailsPage({ params }: { params: { id: s
           </CardContent>
         </Card>
 
+        {/* Satisfaction Survey - Only for the employee when RESOLVED */}
+        {(grievance.status === 'RESOLVED' || grievance.status === 'CLOSED') && session.user.id === grievance.employeeId && (
+          <SatisfactionSurvey 
+            grievanceId={grievance.id} 
+            initialScore={grievance.satisfactionScore} 
+            initialFeedback={grievance.satisfactionFeedback} 
+          />
+        )}
+
         {/* Comment Section */}
         <CommentSection 
           grievanceId={grievance.id} 
-          comments={grievance.comments} 
+          comments={grievance.comments.filter(c => !c.isInternal)} 
           currentUser={session.user} 
         />
       </div>

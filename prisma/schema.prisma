@@ -57,6 +57,12 @@ model Grievance {
   
   rejectionReason String?
   
+  escalationLevel Int       @default(0)
+  slaDueDate      DateTime?
+  
+  satisfactionScore    Int?
+  satisfactionFeedback String?
+  
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -72,6 +78,8 @@ model Comment {
   
   authorId    String
   author      User      @relation(fields: [authorId], references: [id])
+  
+  isInternal  Boolean   @default(false)
   
   createdAt   DateTime  @default(now())
 }

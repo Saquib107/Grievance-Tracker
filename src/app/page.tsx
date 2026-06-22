@@ -15,13 +15,13 @@ export default async function Home() {
           <span>GrievanceHub</span>
         </div>
         {session ? (
-          <Button asChild variant="outline">
-            <Link href="/dashboard">Go to Dashboard</Link>
-          </Button>
+          <Link href="/dashboard" className="inline-flex h-9 items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:hover:bg-slate-800 dark:hover:text-slate-50">
+            Go to Dashboard
+          </Link>
         ) : (
-          <Button asChild variant="outline">
-            <Link href="/login">Log in</Link>
-          </Button>
+          <Link href="/login" className="inline-flex h-9 items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:hover:bg-slate-800 dark:hover:text-slate-50">
+            Log in
+          </Link>
         )}
       </header>
 
@@ -45,17 +45,13 @@ export default async function Home() {
 
         <div className="flex flex-col sm:flex-row gap-4 items-center">
           {session ? (
-            <Button asChild size="lg" className="h-14 px-8 text-lg bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-xl shadow-indigo-600/20 transition-all hover:scale-105">
-              <Link href="/dashboard">
-                Enter Dashboard <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
+            <Link href="/dashboard" className="inline-flex h-14 items-center justify-center rounded-full bg-indigo-600 px-8 text-lg font-medium text-white shadow-xl shadow-indigo-600/20 transition-all hover:scale-105 hover:bg-indigo-700">
+              Enter Dashboard <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
           ) : (
-            <Button asChild size="lg" className="h-14 px-8 text-lg bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-xl shadow-indigo-600/20 transition-all hover:scale-105">
-              <Link href="/login">
-                Get Started <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
+            <Link href="/login" className="inline-flex h-14 items-center justify-center rounded-full bg-indigo-600 px-8 text-lg font-medium text-white shadow-xl shadow-indigo-600/20 transition-all hover:scale-105 hover:bg-indigo-700">
+              Get Started <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
           )}
         </div>
       </main>

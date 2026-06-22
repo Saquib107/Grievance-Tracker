@@ -23,13 +23,18 @@ export default async function HRCasesPage() {
     where: { priority: "CRITICAL", status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] } }
   })
 
-  // Overdue based on simple SLA: anything submitted > 7 days ago and not resolved
-  const sevenDaysAgo = new Date()
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+  const now = new Date()
   const overdueCases = await prisma.grievance.count({
     where: { 
       status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] },
-      createdAt: { lt: sevenDaysAgo }
+      slaDueDate: { lt: now }
+    }
+  })
+
+  const myOpenCases = await prisma.grievance.count({
+    where: { 
+      status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] },
+      assignedToId: session.user.id
     }
   })
 
@@ -44,7 +49,11 @@ export default async function HRCasesPage() {
 
   const allGrievances = await prisma.grievance.findMany({
     orderBy: { createdAt: 'desc' },
-    include: { category: true, employee: { select: { name: true } } }
+    include: { 
+      category: true, 
+      employee: { select: { name: true } },
+      assignedTo: { select: { name: true } }
+    }
   })
 
   const getStatusColor = (status: string) => {
@@ -78,11 +87,11 @@ export default async function HRCasesPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">New Complaints</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600">My Open Cases</CardTitle>
             <Inbox className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-blue-600">{newComplaints}</div>
+            <div className="text-3xl font-bold text-blue-600">{myOpenCases}</div>
           </CardContent>
         </Card>
         
@@ -103,7 +112,7 @@ export default async function HRCasesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-amber-600">{overdueCases}</div>
-            <p className="text-xs text-slate-500 mt-1">&gt; 7 days old</p>
+            <p className="text-xs text-slate-500 mt-1">Past SLA Deadline</p>
           </CardContent>
         </Card>
 
@@ -131,9 +140,10 @@ export default async function HRCasesPage() {
                   <TableHead>Subject</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Employee</TableHead>
+                  <TableHead>Assigned To</TableHead>
                   <TableHead>Priority</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead>SLA Due</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -147,6 +157,9 @@ export default async function HRCasesPage() {
                     <TableCell>
                       {g.isAnonymous ? "Anonymous" : g.employee?.name || "Unknown"}
                     </TableCell>
+                    <TableCell className="text-slate-500">
+                      {g.assignedTo?.name || "Unassigned"}
+                    </TableCell>
                     <TableCell className={getPriorityColor(g.priority)}>
                       {g.priority}
                     </TableCell>
@@ -155,8 +168,8 @@ export default async function HRCasesPage() {
                         {g.status.replace('_', ' ')}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-slate-500 text-sm">
-                      {new Date(g.createdAt).toLocaleDateString()}
+                    <TableCell className="text-slate-500 text-sm whitespace-nowrap">
+                      {g.slaDueDate ? new Date(g.slaDueDate).toLocaleDateString() : "N/A"}
                     </TableCell>
                   </TableRow>
                 ))}

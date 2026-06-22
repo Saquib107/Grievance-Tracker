@@ -31,6 +31,15 @@ export async function submitGrievance(formData: FormData) {
   const count = await prisma.grievance.count()
   const ticketNumber = `GRV-${currentYear}-${String(count + 1).padStart(5, '0')}`
 
+  // Calculate SLA Due Date
+  const slaDueDate = new Date()
+  switch (priority) {
+    case 'CRITICAL': slaDueDate.setHours(slaDueDate.getHours() + 24); break;
+    case 'HIGH': slaDueDate.setDate(slaDueDate.getDate() + 3); break;
+    case 'MEDIUM': slaDueDate.setDate(slaDueDate.getDate() + 5); break;
+    case 'LOW': default: slaDueDate.setDate(slaDueDate.getDate() + 7); break;
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: session.user.id }
   })
@@ -49,6 +58,7 @@ export async function submitGrievance(formData: FormData) {
       department: user.department || "General",
       status: "SUBMITTED",
       attachments: attachment ? JSON.stringify([attachment]) : "[]",
+      slaDueDate,
     }
   })
 
@@ -79,5 +89,48 @@ export async function updateGrievanceStatus(grievanceId: string, status: string)
 
   revalidatePath(`/hr/cases/${grievanceId}`)
   revalidatePath("/hr/cases")
+}
+
+export async function assignGrievance(grievanceId: string, assignedToId: string | null) {
+  const session = await getServerSession(authOptions)
+  
+  if (!session?.user?.id || (session.user.role !== "HR" && session.user.role !== "ADMIN")) {
+    throw new Error("Unauthorized")
+  }
+
+  await prisma.grievance.update({
+    where: { id: grievanceId },
+    data: { assignedToId }
+  })
+
+  revalidatePath(`/hr/cases/${grievanceId}`)
+  revalidatePath("/hr/cases")
+}
+
+export async function submitSatisfactionSurvey(grievanceId: string, score: number, feedback: string) {
+  const session = await getServerSession(authOptions)
+  
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized")
+  }
+
+  const grievance = await prisma.grievance.findUnique({
+    where: { id: grievanceId },
+    select: { employeeId: true, status: true }
+  })
+
+  if (grievance?.employeeId !== session.user.id || grievance.status !== "RESOLVED") {
+    throw new Error("Unauthorized or invalid state")
+  }
+
+  await prisma.grievance.update({
+    where: { id: grievanceId },
+    data: { 
+      satisfactionScore: score,
+      satisfactionFeedback: feedback
+    }
+  })
+
+  revalidatePath(`/grievances/${grievanceId}`)
 }
 

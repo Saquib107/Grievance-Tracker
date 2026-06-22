@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator"
 import CommentSection from "@/app/grievances/[id]/CommentSection"
 import StatusTimeline from "@/app/grievances/[id]/StatusTimeline"
 import StatusUpdater from "./StatusUpdater"
+import AssigneeUpdater from "./AssigneeUpdater"
 import { Clock, ShieldAlert } from "lucide-react"
 
 export default async function HRCaseDetailsPage({ params }: { params: { id: string } }) {
@@ -33,6 +34,11 @@ export default async function HRCaseDetailsPage({ params }: { params: { id: stri
         orderBy: { createdAt: 'asc' }
       }
     }
+  })
+
+  const hrUsers = await prisma.user.findMany({
+    where: { role: { in: ["HR", "ADMIN"] } },
+    select: { id: true, name: true }
   })
 
   if (!grievance) {
@@ -101,6 +107,7 @@ export default async function HRCaseDetailsPage({ params }: { params: { id: stri
           </CardHeader>
           <CardContent className="pt-6 space-y-4">
             <StatusUpdater grievanceId={grievance.id} currentStatus={grievance.status} />
+            <AssigneeUpdater grievanceId={grievance.id} currentAssigneeId={grievance.assignedToId} hrUsers={hrUsers} />
           </CardContent>
         </Card>
 

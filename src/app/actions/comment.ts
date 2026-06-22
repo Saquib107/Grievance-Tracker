@@ -13,13 +13,16 @@ export async function addComment(grievanceId: string, formData: FormData) {
   }
 
   const content = formData.get("content") as string
+  const isInternal = formData.get("isInternal") === "true"
+  
   if (!content) return
 
   await prisma.comment.create({
     data: {
       content,
       grievanceId,
-      authorId: session.user.id
+      authorId: session.user.id,
+      isInternal
     }
   })
 
