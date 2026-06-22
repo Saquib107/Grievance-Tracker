@@ -13,6 +13,16 @@
 # testing
 /coverage
 
+# next.js config
+next.config.js
+*.js.map
+
+# Database
+dev.db
+dev.db-journal
+*.db
+*.db-journal
+
 # next.js
 /.next/
 /out/
@@ -39,3 +49,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
