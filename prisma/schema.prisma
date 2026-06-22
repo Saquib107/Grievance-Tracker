@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String      @id @default(cuid())
+  name          String?
+  email         String      @unique
+  password      String? 
+  role          String      @default("EMPLOYEE") // EMPLOYEE, HR, MANAGER, ADMIN
+  department    String?
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  grievances    Grievance[] @relation("EmployeeGrievances")
+  assignedTo    Grievance[] @relation("AssignedGrievances")
+  comments      Comment[]
+}
+
+model Category {
+  id          String      @id @default(cuid())
+  name        String      @unique 
+  description String?
+  grievances  Grievance[]
+}
+
+model Grievance {
+  id           String    @id @default(cuid())
+  ticketNumber String    @unique 
+  
+  employeeId   String? 
+  employee     User?     @relation("EmployeeGrievances", fields: [employeeId], references: [id])
+  
+  assignedToId String?
+  assignedTo   User?     @relation("AssignedGrievances", fields: [assignedToId], references: [id])
+  
+  categoryId   String
+  category     Category  @relation(fields: [categoryId], references: [id])
+  
+  department   String
+  priority     String    @default("LOW") // LOW, MEDIUM, HIGH, CRITICAL
+  status       String    @default("SUBMITTED") // SUBMITTED, UNDER_REVIEW, INVESTIGATION, ACTION_TAKEN, RESOLVED, CLOSED, REJECTED
+  
+  subject      String
+  description  String
+  isAnonymous  Boolean   @default(false)
+  
+  // SQLite doesn't support String[] natively, so we store it as a JSON string or comma-separated string
+  attachments  String    @default("[]")
+  
+  rejectionReason String?
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  comments     Comment[]
+}
+
+model Comment {
+  id          String    @id @default(cuid())
+  content     String
+  
+  grievanceId String
+  grievance   Grievance @relation(fields: [grievanceId], references: [id], onDelete: Cascade)
+  
+  authorId    String
+  author      User      @relation(fields: [authorId], references: [id])
+  
+  createdAt   DateTime  @default(now())
+}
