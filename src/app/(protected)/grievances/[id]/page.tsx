@@ -5,7 +5,7 @@ import { redirect, notFound } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import CommentSection from "./CommentSection"
+import EmployeeCommentSection from "./EmployeeCommentSection"
 import StatusTimeline from "./StatusTimeline"
 import SatisfactionSurvey from "./SatisfactionSurvey"
 import { Clock, ShieldAlert, FileText } from "lucide-react"
@@ -24,6 +24,7 @@ export default async function GrievanceDetailsPage({ params }: { params: { id: s
     where: { id },
     include: {
       category: true,
+      assignedTo: { select: { name: true, image: true, role: true } },
       employee: {
         select: { name: true, department: true }
       },
@@ -101,9 +102,8 @@ export default async function GrievanceDetailsPage({ params }: { params: { id: s
         )}
 
         {/* Comment Section */}
-        <CommentSection 
-          grievanceId={grievance.id} 
-          comments={grievance.comments.filter(c => !c.isInternal)} 
+        <EmployeeCommentSection 
+          grievance={grievance}
           currentUser={session.user} 
         />
       </div>
