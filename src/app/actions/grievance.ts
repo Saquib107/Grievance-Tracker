@@ -134,3 +134,34 @@ export async function submitSatisfactionSurvey(grievanceId: string, score: numbe
   revalidatePath(`/grievances/${grievanceId}`)
 }
 
+export async function bulkUpdateGrievanceStatus(grievanceIds: string[], status: string) {
+  const session = await getServerSession(authOptions)
+  
+  if (!session?.user?.id || (session.user.role !== "HR" && session.user.role !== "ADMIN")) {
+    throw new Error("Unauthorized")
+  }
+
+  await prisma.grievance.updateMany({
+    where: { id: { in: grievanceIds } },
+    data: { status }
+  })
+
+  // We could send emails in bulk here if necessary, but skipping for brevity
+  revalidatePath("/hr/cases")
+}
+
+export async function bulkAssignGrievance(grievanceIds: string[], assignedToId: string | null) {
+  const session = await getServerSession(authOptions)
+  
+  if (!session?.user?.id || (session.user.role !== "HR" && session.user.role !== "ADMIN")) {
+    throw new Error("Unauthorized")
+  }
+
+  await prisma.grievance.updateMany({
+    where: { id: { in: grievanceIds } },
+    data: { assignedToId }
+  })
+
+  revalidatePath("/hr/cases")
+}
+

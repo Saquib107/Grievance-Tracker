@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle, Clock, CheckCircle2, Inbox } from "lucide-react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import HRCasesTableClient from "./HRCasesTableClient"
 
 export default async function HRCasesPage() {
   const session = await getServerSession(authOptions)
@@ -56,28 +56,10 @@ export default async function HRCasesPage() {
     }
   })
 
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case 'SUBMITTED': return 'bg-blue-600 text-white'
-      case 'UNDER_REVIEW': return 'bg-purple-600 text-white'
-      case 'INVESTIGATION': return 'bg-amber-500 text-white'
-      case 'ACTION_TAKEN': return 'bg-blue-700 text-white'
-      case 'RESOLVED': return 'bg-emerald-600 text-white'
-      case 'CLOSED': return 'bg-slate-700 text-white'
-      case 'REJECTED': return 'bg-red-600 text-white'
-      default: return 'bg-slate-600 text-white'
-    }
-  }
-
-  const getPriorityColor = (priority: string) => {
-    switch(priority) {
-      case 'LOW': return 'text-slate-500'
-      case 'MEDIUM': return 'text-blue-500'
-      case 'HIGH': return 'text-amber-500'
-      case 'CRITICAL': return 'text-red-500 font-bold'
-      default: return 'text-slate-500'
-    }
-  }
+  const hrUsers = await prisma.user.findMany({
+    where: { role: { in: ["HR", "ADMIN"] } },
+    select: { id: true, name: true }
+  })
 
   return (
     <div className="space-y-4 text-sm">
@@ -134,50 +116,7 @@ export default async function HRCasesPage() {
           <CardTitle>All Grievances</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border border-slate-200 overflow-hidden">
-            <Table>
-              <TableHeader className="bg-slate-50">
-                <TableRow>
-                  <TableHead>Ticket ID</TableHead>
-                  <TableHead>Subject</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Assigned To</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>SLA Due</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {allGrievances.map((g) => (
-                  <TableRow key={g.id} className="h-10 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
-                    <TableCell className="font-medium text-slate-800 dark:text-slate-200">
-                      <Link href={`/hr/cases/${g.id}`}>{g.ticketNumber}</Link>
-                    </TableCell>
-                    <TableCell className="max-w-[200px] truncate">{g.subject}</TableCell>
-                    <TableCell>{g.category.name}</TableCell>
-                    <TableCell>
-                      {g.isAnonymous ? "Anonymous" : g.employee?.name || "Unknown"}
-                    </TableCell>
-                    <TableCell className="text-slate-500">
-                      {g.assignedTo?.name || "Unassigned"}
-                    </TableCell>
-                    <TableCell className={getPriorityColor(g.priority)}>
-                      {g.priority}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={`${getStatusColor(g.status)} border-none`}>
-                        {g.status.replace('_', ' ')}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-slate-500 text-sm whitespace-nowrap">
-                      {g.slaDueDate ? new Date(g.slaDueDate).toLocaleDateString() : "N/A"}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <HRCasesTableClient grievances={allGrievances} hrUsers={hrUsers} />
         </CardContent>
       </Card>
     </div>
