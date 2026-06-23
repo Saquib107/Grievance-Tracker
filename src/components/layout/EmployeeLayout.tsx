@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-export default function Navbar({ user }: { user: any }) {
+export default function EmployeeLayout({ user, children }: { user: any, children: React.ReactNode }) {
   const pathname = usePathname()
 
   const links = [
@@ -25,15 +25,11 @@ export default function Navbar({ user }: { user: any }) {
     { href: "/grievances", label: "My Grievances" },
   ]
 
-  if (user.role === "HR" || user.role === "ADMIN") {
-    links.push({ href: "/hr/cases", label: "Case Management" })
-    links.push({ href: "/hr/analytics", label: "Analytics" })
-  }
-
   return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
     <nav className="sticky top-0 z-50 w-full border-b bg-white/80 dark:bg-slate-950/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:border-slate-800">
       <div className="max-w-7xl mx-auto flex h-16 items-center px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-2 font-bold text-xl mr-8 text-indigo-600 dark:text-indigo-400">
+        <div className="flex items-center gap-2 font-bold text-xl mr-8 text-sky-600 dark:text-sky-400">
           <ShieldAlert className="h-6 w-6" />
           <Link href="/dashboard">GrievanceHub</Link>
         </div>
@@ -43,9 +39,9 @@ export default function Navbar({ user }: { user: any }) {
             <Link
               key={link.href}
               href={link.href}
-              className={`text-sm font-medium transition-colors hover:text-indigo-600 dark:hover:text-indigo-400 ${
+              className={`text-sm font-medium transition-colors hover:text-sky-600 dark:hover:text-sky-400 ${
                 pathname === link.href
-                  ? "text-indigo-600 dark:text-indigo-400"
+                  ? "text-sky-600 dark:text-sky-400"
                   : "text-slate-600 dark:text-slate-400"
               }`}
             >
@@ -57,9 +53,9 @@ export default function Navbar({ user }: { user: any }) {
         <div className="flex items-center gap-4 ml-auto">
           <DropdownMenu>
             <DropdownMenuTrigger className="relative h-8 w-8 rounded-full focus:outline-none hover:opacity-80 transition-opacity">
-              <Avatar className="h-8 w-8 ring-2 ring-indigo-500/20">
+              <Avatar className="h-8 w-8 ring-2 ring-sky-500/20">
                 <AvatarImage src={user.image || ""} alt={user.name || "User"} />
-                <AvatarFallback className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
+                <AvatarFallback className="bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300">
                   {user.name?.charAt(0) || "U"}
                 </AvatarFallback>
               </Avatar>
@@ -72,7 +68,7 @@ export default function Navbar({ user }: { user: any }) {
                     <p className="text-xs leading-none text-muted-foreground">
                       {user.email}
                     </p>
-                    <p className="text-xs font-semibold text-indigo-600 mt-1 uppercase tracking-wider">
+                    <p className="text-xs font-semibold text-sky-600 mt-1 uppercase tracking-wider">
                       {user.role}
                     </p>
                   </div>
@@ -98,5 +94,9 @@ export default function Navbar({ user }: { user: any }) {
         </div>
       </div>
     </nav>
+    <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+      {children}
+    </main>
+    </div>
   )
 }
