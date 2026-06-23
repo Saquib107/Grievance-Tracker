@@ -3,6 +3,8 @@
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant employee (&:is(.theme-employee *));
+@custom-variant hr (&:is(.theme-hr *));
 
 @theme inline {
   --color-background: var(--background);
@@ -115,6 +117,28 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+}
+
+.theme-employee {
+  /* Blue-500 primary */
+  --primary: oklch(0.623 0.214 259.815);
+  --primary-foreground: oklch(0.985 0 0);
+  /* Generous rounded corners */
+  --radius: 1rem;
+  /* Light background */
+  --background: oklch(1 0 0);
+  --card: oklch(1 0 0);
+}
+
+.theme-hr {
+  /* Gray-800 primary */
+  --primary: oklch(0.268 0.007 252.562);
+  --primary-foreground: oklch(0.985 0 0);
+  /* Tight rounded corners */
+  --radius: 0.375rem;
+  /* Gray-50 background */
+  --background: oklch(0.985 0 0);
+  --card: oklch(1 0 0);
 }
 
 @layer base {

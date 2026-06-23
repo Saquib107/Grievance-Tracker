@@ -17,8 +17,8 @@ export default async function ProtectedLayout({
 
   // Choose layout based on role
   if (session.user.role === "HR" || session.user.role === "ADMIN") {
-    return <HRLayout user={session.user}>{children}</HRLayout>
+    return <div className="theme-hr"><HRLayout user={session.user}>{children}</HRLayout></div>
   }
 
-  return <EmployeeLayout user={session.user}>{children}</EmployeeLayout>
+  return <div className="theme-employee"><EmployeeLayout user={session.user}>{children}</EmployeeLayout></div>
 }

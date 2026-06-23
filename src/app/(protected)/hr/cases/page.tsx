@@ -58,12 +58,14 @@ export default async function HRCasesPage() {
 
   const getStatusColor = (status: string) => {
     switch(status) {
-      case 'SUBMITTED': return 'bg-blue-100 text-blue-800'
-      case 'UNDER_REVIEW': return 'bg-purple-100 text-purple-800'
-      case 'INVESTIGATION': return 'bg-amber-100 text-amber-800'
-      case 'RESOLVED': return 'bg-emerald-100 text-emerald-800'
-      case 'CLOSED': return 'bg-slate-100 text-slate-800'
-      default: return 'bg-slate-100 text-slate-800'
+      case 'SUBMITTED': return 'bg-blue-600 text-white'
+      case 'UNDER_REVIEW': return 'bg-purple-600 text-white'
+      case 'INVESTIGATION': return 'bg-amber-500 text-white'
+      case 'ACTION_TAKEN': return 'bg-blue-700 text-white'
+      case 'RESOLVED': return 'bg-emerald-600 text-white'
+      case 'CLOSED': return 'bg-slate-700 text-white'
+      case 'REJECTED': return 'bg-red-600 text-white'
+      default: return 'bg-slate-600 text-white'
     }
   }
 
@@ -78,9 +80,9 @@ export default async function HRCasesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 text-sm">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Case Management</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Case Management</h1>
         <p className="text-slate-500 dark:text-slate-400 mt-1">Manage, investigate, and resolve employee grievances.</p>
       </div>
 
@@ -148,8 +150,8 @@ export default async function HRCasesPage() {
               </TableHeader>
               <TableBody>
                 {allGrievances.map((g) => (
-                  <TableRow key={g.id} className="hover:bg-slate-50 cursor-pointer">
-                    <TableCell className="font-medium text-indigo-600">
+                  <TableRow key={g.id} className="h-10 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                    <TableCell className="font-medium text-slate-800 dark:text-slate-200">
                       <Link href={`/hr/cases/${g.id}`}>{g.ticketNumber}</Link>
                     </TableCell>
                     <TableCell className="max-w-[200px] truncate">{g.subject}</TableCell>

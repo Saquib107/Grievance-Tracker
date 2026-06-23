@@ -47,23 +47,24 @@ export default async function HRCaseDetailsPage({ params }: { params: { id: stri
 
   const getStatusColor = (status: string) => {
     switch(status) {
-      case 'SUBMITTED': return 'bg-blue-100 text-blue-800'
-      case 'UNDER_REVIEW': return 'bg-purple-100 text-purple-800'
-      case 'INVESTIGATION': return 'bg-amber-100 text-amber-800'
-      case 'RESOLVED': return 'bg-emerald-100 text-emerald-800'
-      case 'CLOSED': return 'bg-slate-100 text-slate-800'
-      case 'REJECTED': return 'bg-red-100 text-red-800'
-      default: return 'bg-slate-100 text-slate-800'
+      case 'SUBMITTED': return 'bg-blue-600 text-white'
+      case 'UNDER_REVIEW': return 'bg-purple-600 text-white'
+      case 'INVESTIGATION': return 'bg-amber-500 text-white'
+      case 'ACTION_TAKEN': return 'bg-blue-700 text-white'
+      case 'RESOLVED': return 'bg-emerald-600 text-white'
+      case 'CLOSED': return 'bg-slate-700 text-white'
+      case 'REJECTED': return 'bg-red-600 text-white'
+      default: return 'bg-slate-600 text-white'
     }
   }
 
   return (
-    <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 py-8">
+    <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 py-6 text-sm">
       {/* Main Content */}
-      <div className="md:col-span-2 space-y-6">
+      <div className="md:col-span-2 space-y-4">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight">{grievance.ticketNumber}</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{grievance.ticketNumber}</h1>
             <Badge className={`${getStatusColor(grievance.status)} border-none`}>
               {grievance.status.replace('_', ' ')}
             </Badge>
