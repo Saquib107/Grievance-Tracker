@@ -53,6 +53,49 @@ export default async function HRAnalyticsPage() {
     value: sc._count._all
   }))
 
+  // 4. Average Resolution Time
+  const resolvedGrievances = await prisma.grievance.findMany({
+    where: { status: { in: ["RESOLVED", "CLOSED"] } },
+    select: { createdAt: true, updatedAt: true }
+  })
+  
+  let averageResolutionDays = 0
+  if (resolvedGrievances.length > 0) {
+    const totalMs = resolvedGrievances.reduce((acc, g) => {
+      return acc + (g.updatedAt.getTime() - g.createdAt.getTime())
+    }, 0)
+    averageResolutionDays = (totalMs / resolvedGrievances.length) / (1000 * 60 * 60 * 24)
+  }
+
+  // 5. Monthly Trends
+  const sixMonthsAgo = new Date()
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
+  
+  const recentGrievances = await prisma.grievance.findMany({
+    where: { createdAt: { gte: sixMonthsAgo } },
+    select: { createdAt: true }
+  })
+
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  const trendsMap = new Map<string, number>()
+  
+  recentGrievances.forEach(g => {
+    const month = `${monthNames[g.createdAt.getMonth()]} ${g.createdAt.getFullYear()}`
+    trendsMap.set(month, (trendsMap.get(month) || 0) + 1)
+  })
+
+  // To ensure chronological order, generate the last 6 months list
+  const trendsData = []
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date()
+    d.setMonth(d.getMonth() - i)
+    const month = `${monthNames[d.getMonth()]} ${d.getFullYear()}`
+    trendsData.push({
+      name: month,
+      value: trendsMap.get(month) || 0
+    })
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -64,6 +107,8 @@ export default async function HRAnalyticsPage() {
         categoryData={categoryData} 
         departmentData={departmentData}
         statusData={statusData}
+        trendsData={trendsData}
+        averageResolutionDays={averageResolutionDays}
       />
     </div>
   )
