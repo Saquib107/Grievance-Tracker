@@ -7,8 +7,8 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
-import { MapPin, Plus, Edit2 } from "lucide-react"
-import { createSite, updateSite } from "@/app/actions/sites"
+import { MapPin, Plus, Edit2, Trash2 } from "lucide-react"
+import { createSite, updateSite, deleteSite } from "@/app/actions/sites"
 
 export default function AdminSitesClient({ initialSites }: { initialSites: any[] }) {
   const [sites, setSites] = useState(initialSites)
@@ -49,6 +49,17 @@ export default function AdminSitesClient({ initialSites }: { initialSites: any[]
       router.refresh()
     } else {
       toast.error(res.error || "Failed to save site")
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this site? This action cannot be undone.")) return
+    const res = await deleteSite(id)
+    if (res.success) {
+      toast.success("Site deleted successfully!")
+      router.refresh()
+    } else {
+      toast.error(res.error || "Failed to delete site")
     }
   }
 
@@ -116,9 +127,12 @@ export default function AdminSitesClient({ initialSites }: { initialSites: any[]
                   <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{site.hrAssigned}</td>
                   <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{site.totalEmployees}</td>
                   <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{site.totalCases}</td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-right flex justify-end gap-2">
                     <Button variant="ghost" size="sm" onClick={() => openEdit(site)}>
                       <Edit2 className="h-4 w-4 text-slate-500" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="hover:bg-red-50 hover:text-red-600" onClick={() => handleDelete(site.id)}>
+                      <Trash2 className="h-4 w-4 text-slate-500 hover:text-red-600" />
                     </Button>
                   </td>
                 </tr>

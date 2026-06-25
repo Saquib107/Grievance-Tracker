@@ -6,11 +6,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog"
-import { createHRUser, resetHRPassword } from "@/app/actions/admin"
+import { createHRUser, resetHRPassword, deleteUser } from "@/app/actions/admin"
 import { updateEmployeeStatus } from "@/app/actions/employees"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
-import { MoreHorizontal, Key, BadgeCheck, Clock, Inbox, CheckCircle2, UserPlus, Activity, Ban, CheckCircle } from "lucide-react"
+import { MoreHorizontal, Key, BadgeCheck, Clock, Inbox, CheckCircle2, UserPlus, Activity, Ban, CheckCircle, Trash2 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 
@@ -73,6 +73,17 @@ export default function UsersClient({ initialUsers, sites }: { initialUsers: any
       router.refresh()
     } else {
       toast.error("Failed to update status")
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) return
+    const res = await deleteUser(id)
+    if (res.success) {
+      toast.success("User deleted successfully!")
+      router.refresh()
+    } else {
+      toast.error(res.error || "Failed to delete user")
     }
   }
 
@@ -243,6 +254,9 @@ export default function UsersClient({ initialUsers, sites }: { initialUsers: any
                         <DropdownMenuItem onClick={() => toggleStatus(u.id, u.isActive)}>
                           {u.isActive ? <Ban className="mr-2 h-4 w-4" /> : <CheckCircle className="mr-2 h-4 w-4" />} 
                           {u.isActive ? "Deactivate HR" : "Activate HR"}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600 focus:bg-red-50 focus:text-red-700" onClick={() => handleDelete(u.id)}>
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete HR
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

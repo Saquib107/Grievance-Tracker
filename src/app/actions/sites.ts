@@ -42,3 +42,16 @@ export async function updateSite(id: string, data: { name: string, code: string,
     return { success: false, error: "Failed to update site" }
   }
 }
+
+export async function deleteSite(id: string) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session || session.user.role !== "ADMIN") return { success: false, error: "Unauthorized" }
+
+    await prisma.site.delete({ where: { id } })
+    return { success: true }
+  } catch (error) {
+    console.error(error)
+    return { success: false, error: "Failed to delete site" }
+  }
+}

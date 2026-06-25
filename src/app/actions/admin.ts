@@ -60,3 +60,16 @@ export async function resetHRPassword(userId: string, newPassword: string) {
     return { success: false, error: "Failed to reset password" }
   }
 }
+
+export async function deleteUser(id: string) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session || session.user.role !== "ADMIN") return { success: false, error: "Unauthorized" }
+
+    await prisma.user.delete({ where: { id } })
+    return { success: true }
+  } catch (error) {
+    console.error(error)
+    return { success: false, error: "Failed to delete user" }
+  }
+}
