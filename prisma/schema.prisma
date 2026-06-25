@@ -49,6 +49,7 @@ model Grievance {
   concernedPerson String?
   issue           String?
   currentStatus   String?   @default("PENDING")
+  sentiment       String?
   solved          String?   @default("PENDING")
   dateResolved    DateTime?
   remark          String?
@@ -80,6 +81,7 @@ model Grievance {
   updatedAt    DateTime  @updatedAt
 
   comments     Comment[]
+  logs         GrievanceLog[]
 }
 
 model Comment {
@@ -93,6 +95,18 @@ model Comment {
   author      User      @relation(fields: [authorId], references: [id])
   
   isInternal  Boolean   @default(false)
+  
+  createdAt   DateTime  @default(now())
+}
+
+model GrievanceLog {
+  id          String    @id @default(cuid())
+  grievanceId String
+  grievance   Grievance @relation(fields: [grievanceId], references: [id], onDelete: Cascade)
+  
+  changedBy   String?   // "SYSTEM", "PUBLIC", or User Name
+  action      String    // e.g., "STATUS_CHANGED", "ASSIGNED"
+  details     String?   // JSON string or text details
   
   createdAt   DateTime  @default(now())
 }
