@@ -18,9 +18,7 @@ next.config.js
 *.js.map
 
 # Database
-dev.db
-dev.db-journal
-*.db
+# (removed dev.db from gitignore so it deploys to Vercel for demo purposes)
 *.db-journal
 
 # next.js
