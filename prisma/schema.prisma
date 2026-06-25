@@ -41,15 +41,28 @@ model Grievance {
   assignedToId String?
   assignedTo   User?     @relation("AssignedGrievances", fields: [assignedToId], references: [id])
   
-  categoryId   String
-  category     Category  @relation(fields: [categoryId], references: [id])
+  // Fields aligned with Excel Template
+  empIdGatepass   String?
+  location        String?
+  grievantName    String?
+  grievantContact String?
+  concernedPerson String?
+  issue           String?
+  currentStatus   String?   @default("PENDING")
+  solved          String?   @default("PENDING")
+  dateResolved    DateTime?
+  remark          String?
   
-  department   String
+  // Legacy fields
+  categoryId   String?
+  category     Category?  @relation(fields: [categoryId], references: [id])
+  
+  department   String?
   priority     String    @default("LOW") // LOW, MEDIUM, HIGH, CRITICAL
   status       String    @default("SUBMITTED") // SUBMITTED, UNDER_REVIEW, INVESTIGATION, ACTION_TAKEN, RESOLVED, CLOSED, REJECTED
   
-  subject      String
-  description  String
+  subject      String?
+  description  String?
   isAnonymous  Boolean   @default(false)
   
   // SQLite doesn't support String[] natively, so we store it as a JSON string or comma-separated string

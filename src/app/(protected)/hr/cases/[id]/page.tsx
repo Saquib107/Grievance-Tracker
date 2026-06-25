@@ -138,7 +138,7 @@ export default async function HRCaseDetailsPage({ params }: { params: { id: stri
             <Separator />
             <div>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Category</p>
-              <p className="font-medium mt-1">{grievance.category.name}</p>
+              <p className="font-medium mt-1">{grievance.category?.name || 'Uncategorized'}</p>
             </div>
             <Separator />
             <div>

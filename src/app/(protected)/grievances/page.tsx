@@ -96,7 +96,7 @@ export default async function MyGrievancesPage() {
                     <div className="flex flex-wrap items-center gap-y-3 gap-x-6 text-sm">
                       <div className="flex items-center text-slate-600 dark:text-slate-400">
                         <FileText className="h-4 w-4 mr-2 opacity-70" />
-                        {g.category.name}
+                        {g.category?.name}
                       </div>
                       <div className="flex items-center text-slate-600 dark:text-slate-400">
                         <Clock className="h-4 w-4 mr-2 opacity-70" />

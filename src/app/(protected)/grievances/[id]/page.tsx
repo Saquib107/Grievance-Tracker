@@ -117,7 +117,7 @@ export default async function GrievanceDetailsPage({ params }: { params: { id: s
           <CardContent className="space-y-4">
             <div>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Category</p>
-              <p className="font-medium mt-1">{grievance.category.name}</p>
+              <p className="font-medium mt-1">{grievance.category?.name || 'Uncategorized'}</p>
             </div>
             <Separator />
             <div>

@@ -19,10 +19,19 @@ export async function submitGrievance(formData: FormData) {
   const priority = formData.get("priority") as string || "LOW"
   const description = formData.get("description") as string
   const isAnonymous = formData.get("isAnonymous") === "true"
-  // For MVP file uploads, we just accept a string URL or mock it.
   const attachment = formData.get("attachment") as string
 
-  if (!subject || !categoryId || !description) {
+  // New Excel Tracker Fields
+  const empIdGatepass = formData.get("empIdGatepass") as string
+  const location = formData.get("location") as string
+  const grievantName = formData.get("grievantName") as string
+  const grievantContact = formData.get("grievantContact") as string
+  const issue = formData.get("issue") as string
+  const concernedPerson = formData.get("concernedPerson") as string
+  const currentStatus = formData.get("currentStatus") as string || "PENDING"
+  const solved = formData.get("solved") as string || "PENDING"
+
+  if ((!subject || !categoryId || !description) && !issue) {
     throw new Error("Missing required fields")
   }
 
@@ -52,18 +61,46 @@ export async function submitGrievance(formData: FormData) {
       subject,
       description,
       priority,
-      categoryId,
+      categoryId: categoryId || undefined,
       isAnonymous,
       employeeId: session.user.id,
       department: user.department || "General",
       status: "SUBMITTED",
       attachments: attachment ? JSON.stringify([attachment]) : "[]",
       slaDueDate,
+      // Excel fields
+      empIdGatepass,
+      location,
+      grievantName,
+      grievantContact,
+      concernedPerson,
+      issue,
+      currentStatus,
+      solved
     }
   })
 
   revalidatePath("/dashboard")
   redirect(`/grievances/${newGrievance.id}`)
+}
+
+export async function updateGrievanceTracker(grievanceId: string, data: any) {
+  const session = await getServerSession(authOptions)
+  
+  if (!session?.user?.id || (session.user.role !== "HR" && session.user.role !== "ADMIN")) {
+    throw new Error("Unauthorized")
+  }
+
+  const updated = await prisma.grievance.update({
+    where: { id: grievanceId },
+    data,
+    include: { employee: true }
+  })
+
+  revalidatePath(`/hr/cases/${grievanceId}`)
+  revalidatePath("/hr/cases")
+  revalidatePath("/admin/tracker")
+  return updated
 }
 
 export async function updateGrievanceStatus(grievanceId: string, status: string) {
