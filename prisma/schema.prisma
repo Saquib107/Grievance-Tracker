@@ -17,6 +17,11 @@ model User {
   department    String?
   emailVerified DateTime?
   image         String?
+  phone         String?
+  employeeIdStr String?     @unique
+  designation   String?
+  joiningDate   DateTime?
+  isActive      Boolean     @default(true)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   

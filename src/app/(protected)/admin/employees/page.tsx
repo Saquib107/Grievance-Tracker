@@ -1,10 +1,25 @@
-export default function AdminEmployeesPage() {
-  return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Employee Management</h2>
-      <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-slate-200 rounded-lg dark:border-slate-800">
-        <p className="text-lg font-medium text-slate-500">Employee database import module coming soon.</p>
-      </div>
-    </div>
-  )
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/lib/auth"
+import { redirect } from "next/navigation"
+import { prisma } from "@/lib/prisma"
+import AdminEmployeesClient from "./AdminEmployeesClient"
+
+export default async function AdminEmployeesPage() {
+  const session = await getServerSession(authOptions)
+  
+  if (!session || session.user.role !== "ADMIN") {
+    redirect("/dashboard")
+  }
+
+  const employees = await prisma.user.findMany({
+    where: { role: "EMPLOYEE" },
+    include: { site: { select: { name: true } } },
+    orderBy: { createdAt: 'desc' }
+  })
+
+  const sites = await prisma.site.findMany({
+    orderBy: { name: 'asc' }
+  })
+
+  return <AdminEmployeesClient initialEmployees={employees} sites={sites} />
 }

@@ -6,7 +6,10 @@ import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { revalidatePath } from "next/cache"
 
-export async function createHRUser(data: { name: string, email: string, password: string, siteId: string }) {
+export async function createHRUser(data: { 
+  name: string, email: string, password: string, siteId: string, 
+  phone: string, employeeIdStr: string, designation: string, department: string 
+}) {
   try {
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== "ADMIN") return { success: false, error: "Unauthorized" }
@@ -22,8 +25,12 @@ export async function createHRUser(data: { name: string, email: string, password
         email: data.email,
         password: hashedPassword,
         role: "HR",
-        department: "Human Resources",
-        siteId: data.siteId
+        siteId: data.siteId,
+        phone: data.phone,
+        employeeIdStr: data.employeeIdStr,
+        designation: data.designation,
+        department: data.department,
+        isActive: true
       }
     })
 
