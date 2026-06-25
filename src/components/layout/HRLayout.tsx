@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
-import { ShieldAlert, LayoutDashboard, Inbox, PieChart, Users, Settings, LogOut, FileSpreadsheet } from "lucide-react"
+import { ShieldAlert, LayoutDashboard, Inbox, PieChart, Users, Settings, LogOut, FileSpreadsheet, UserPlus } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export default function HRLayout({ user, children }: { user: any, children: React.ReactNode }) {
@@ -12,6 +12,7 @@ export default function HRLayout({ user, children }: { user: any, children: Reac
   const links = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/hr/cases", label: "All Cases", icon: Inbox },
+    { href: "/hr/cases/new", label: "Log On-Behalf", icon: UserPlus },
     { href: "/hr/tracker", label: "Excel Tracker", icon: FileSpreadsheet },
     { href: "/hr/analytics", label: "Analytics", icon: PieChart },
   ]
