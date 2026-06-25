@@ -61,10 +61,8 @@ export default function AdminSitesClient({ initialSites }: { initialSites: any[]
         </div>
         
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={openNew}>
-              <Plus className="h-4 w-4 mr-2" /> Add Site
-            </Button>
+          <DialogTrigger render={<Button className="bg-indigo-600 hover:bg-indigo-700" onClick={openNew} />}>
+            <Plus className="h-4 w-4 mr-2" /> Add Site
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <form onSubmit={handleSubmit}>

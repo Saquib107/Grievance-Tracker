@@ -89,10 +89,8 @@ export default function UsersClient({ initialUsers, sites }: { initialUsers: any
           <p className="text-sm text-slate-500">Manage Human Resources staff and monitor performance.</p>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-indigo-600 hover:bg-indigo-700">
-              <UserPlus className="w-4 h-4 mr-2" /> Add HR User
-            </Button>
+          <DialogTrigger render={<Button className="bg-indigo-600 hover:bg-indigo-700" />}>
+            <UserPlus className="w-4 h-4 mr-2" /> Add HR User
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <form onSubmit={handleCreate}>

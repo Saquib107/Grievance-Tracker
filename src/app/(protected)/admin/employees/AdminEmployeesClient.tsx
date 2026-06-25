@@ -68,10 +68,8 @@ export default function AdminEmployeesClient({ initialEmployees, sites }: { init
           </Button>
           
           <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-indigo-600 hover:bg-indigo-700">
-                <FileSpreadsheet className="h-4 w-4 mr-2" /> Import Excel
-              </Button>
+            <DialogTrigger render={<Button className="bg-indigo-600 hover:bg-indigo-700" />}>
+              <FileSpreadsheet className="h-4 w-4 mr-2" /> Import Excel
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <form onSubmit={handleImport}>
