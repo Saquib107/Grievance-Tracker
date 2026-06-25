@@ -43,7 +43,6 @@ export async function bulkImportGrievances(data: any[]) {
       slaDueDate,
       status: "SUBMITTED",
       isAnonymous: false,
-      attachments: "[]",
       department: "Imported"
     }
   })

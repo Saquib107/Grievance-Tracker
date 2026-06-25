@@ -76,7 +76,6 @@ export async function submitGrievance(formData: FormData) {
       employeeId: onBehalf ? undefined : session.user.id,
       department: user.department || "General",
       status: "SUBMITTED",
-      attachments: attachment ? JSON.stringify([attachment]) : "[]",
       slaDueDate,
       // Excel fields
       empIdGatepass,

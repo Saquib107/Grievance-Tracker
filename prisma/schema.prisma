@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -19,9 +20,25 @@ model User {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   
+  siteId        String?
+  site          Site?       @relation(fields: [siteId], references: [id])
+  
   grievances    Grievance[] @relation("EmployeeGrievances")
   assignedTo    Grievance[] @relation("AssignedGrievances")
   comments      Comment[]
+}
+
+model Site {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  code        String?     @unique
+  location    String?
+  
+  users       User[]
+  grievances  Grievance[]
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 }
 
 model Category {
@@ -36,14 +53,17 @@ model Grievance {
   ticketNumber String    @unique 
   
   employeeId   String? 
-  employee     User?     @relation("EmployeeGrievances", fields: [employeeId], references: [id])
+  employee     User?     @relation("EmployeeGrievances", fields: [employeeId], references: [id], onDelete: SetNull)
   
   assignedToId String?
-  assignedTo   User?     @relation("AssignedGrievances", fields: [assignedToId], references: [id])
+  assignedTo   User?     @relation("AssignedGrievances", fields: [assignedToId], references: [id], onDelete: SetNull)
+  
+  siteId       String?
+  site         Site?     @relation(fields: [siteId], references: [id], onDelete: SetNull)
   
   // Fields aligned with Excel Template
   empIdGatepass   String?
-  location        String?
+  location        String?   // Legacy, kept for backwards compatibility, but siteId is preferred
   grievantName    String?
   grievantContact String?
   concernedPerson String?
@@ -54,9 +74,8 @@ model Grievance {
   dateResolved    DateTime?
   remark          String?
   
-  // Legacy fields
   categoryId   String?
-  category     Category?  @relation(fields: [categoryId], references: [id])
+  category     Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   
   department   String?
   priority     String    @default("LOW") // LOW, MEDIUM, HIGH, CRITICAL
@@ -65,9 +84,6 @@ model Grievance {
   subject      String?
   description  String?
   isAnonymous  Boolean   @default(false)
-  
-  // SQLite doesn't support String[] natively, so we store it as a JSON string or comma-separated string
-  attachments  String    @default("[]")
   
   rejectionReason String?
   
@@ -82,6 +98,19 @@ model Grievance {
 
   comments     Comment[]
   logs         GrievanceLog[]
+  attachments  Attachment[]
+}
+
+model Attachment {
+  id          String    @id @default(cuid())
+  url         String
+  fileType    String?
+  fileName    String?
+  
+  grievanceId String
+  grievance   Grievance @relation(fields: [grievanceId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime  @default(now())
 }
 
 model Comment {
@@ -92,7 +121,7 @@ model Comment {
   grievance   Grievance @relation(fields: [grievanceId], references: [id], onDelete: Cascade)
   
   authorId    String
-  author      User      @relation(fields: [authorId], references: [id])
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   
   isInternal  Boolean   @default(false)
   

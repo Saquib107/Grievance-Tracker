@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import Link from "next/link"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -9,52 +9,66 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { bulkUpdateGrievanceStatus, bulkAssignGrievance } from "@/app/actions/grievance"
 import { toast } from "sonner"
-import { ArrowUpDown, Download, CheckCircle2, UserPlus } from "lucide-react"
+import { ArrowUpDown, Download, CheckCircle2, UserPlus, Filter, X } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function HRCasesTableClient({ 
   grievances, 
-  hrUsers 
+  hrUsers,
+  categories 
 }: { 
   grievances: any[],
-  hrUsers: { id: string, name: string | null }[]
+  hrUsers: { id: string, name: string | null }[],
+  categories: any[]
 }) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
 
-  // Toggle selection
-  const toggleSelectAll = () => {
-    if (selectedIds.size === grievances.length) {
-      setSelectedIds(new Set())
-    } else {
-      setSelectedIds(new Set(grievances.map(g => g.id)))
+  // Filters
+  const [filterSearch, setFilterSearch] = useState("")
+  const [filterStatus, setFilterStatus] = useState("ALL")
+  const [filterPriority, setFilterPriority] = useState("ALL")
+  const [filterCategory, setFilterCategory] = useState("ALL")
+  const [filterAssignedTo, setFilterAssignedTo] = useState("ALL")
+
+  const clearFilters = () => {
+    setFilterSearch("")
+    setFilterStatus("ALL")
+    setFilterPriority("ALL")
+    setFilterCategory("ALL")
+    setFilterAssignedTo("ALL")
+  }
+
+  // Derived filtered & sorted data
+  const processedGrievances = useMemo(() => {
+    let result = grievances
+
+    // Apply filters
+    if (filterSearch) {
+      const lower = filterSearch.toLowerCase()
+      result = result.filter(g => 
+        g.ticketNumber.toLowerCase().includes(lower) || 
+        g.subject.toLowerCase().includes(lower) ||
+        g.employee?.name?.toLowerCase().includes(lower) ||
+        g.location?.toLowerCase().includes(lower)
+      )
     }
-  }
-
-  const toggleSelect = (id: string) => {
-    const newSet = new Set(selectedIds)
-    if (newSet.has(id)) newSet.delete(id)
-    else newSet.add(id)
-    setSelectedIds(newSet)
-  }
-
-  // Sorting
-  const requestSort = (key: string) => {
-    let direction: 'asc' | 'desc' = 'asc'
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc'
+    if (filterStatus !== "ALL") result = result.filter(g => g.status === filterStatus)
+    if (filterPriority !== "ALL") result = result.filter(g => g.priority === filterPriority)
+    if (filterCategory !== "ALL") result = result.filter(g => g.categoryId === filterCategory)
+    if (filterAssignedTo !== "ALL") {
+      if (filterAssignedTo === "UNASSIGNED") result = result.filter(g => !g.assignedToId)
+      else result = result.filter(g => g.assignedToId === filterAssignedTo)
     }
-    setSortConfig({ key, direction })
-  }
 
-  const getSortedGrievances = () => {
-    let sortable = [...grievances]
+    // Apply Sort
     if (sortConfig !== null) {
-      sortable.sort((a, b) => {
+      result.sort((a, b) => {
         let aValue = a[sortConfig.key]
         let bValue = b[sortConfig.key]
 
-        // Handle nested properties for sorting
         if (sortConfig.key === 'date') {
           aValue = new Date(a.createdAt).getTime()
           bValue = new Date(b.createdAt).getTime()
@@ -72,10 +86,33 @@ export default function HRCasesTableClient({
         return 0
       })
     }
-    return sortable
+
+    return result
+  }, [grievances, filterSearch, filterStatus, filterPriority, filterCategory, filterAssignedTo, sortConfig])
+
+
+  // Toggle selection
+  const toggleSelectAll = () => {
+    if (selectedIds.size === processedGrievances.length && processedGrievances.length > 0) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(processedGrievances.map(g => g.id)))
+    }
   }
 
-  const sortedGrievances = getSortedGrievances()
+  const toggleSelect = (id: string) => {
+    const newSet = new Set(selectedIds)
+    if (newSet.has(id)) newSet.delete(id)
+    else newSet.add(id)
+    setSelectedIds(newSet)
+  }
+
+  // Sorting
+  const requestSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc'
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc'
+    setSortConfig({ key, direction })
+  }
 
   // Actions
   const handleBulkStatusUpdate = async (status: string) => {
@@ -107,14 +144,14 @@ export default function HRCasesTableClient({
   }
 
   const handleExportCSV = () => {
-    const toExport = sortedGrievances.filter(g => selectedIds.has(g.id))
+    const toExport = processedGrievances.filter(g => selectedIds.has(g.id))
     const headers = ["Ticket ID", "Subject", "Category", "Priority", "Status", "Date Submitted"]
     const csvContent = "data:text/csv;charset=utf-8," 
       + headers.join(",") + "\n"
       + toExport.map(g => [
           g.ticketNumber,
           `"${g.subject.replace(/"/g, '""')}"`,
-          g.category.name,
+          g.category?.name || "None",
           g.priority,
           g.status,
           new Date(g.createdAt).toLocaleDateString()
@@ -167,7 +204,80 @@ export default function HRCasesTableClient({
   }
 
   return (
-    <div className="relative">
+    <div className="space-y-4">
+      {/* Advanced Filters */}
+      <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row flex-wrap gap-4 items-end">
+        <div className="space-y-1 flex-1 min-w-[200px]">
+          <label className="text-xs font-semibold text-slate-500">Search</label>
+          <Input 
+            placeholder="Ticket ID, Subject, Employee..." 
+            value={filterSearch} 
+            onChange={(e) => setFilterSearch(e.target.value)}
+            className="h-9"
+          />
+        </div>
+        
+        <div className="space-y-1 w-full sm:w-[150px]">
+          <label className="text-xs font-semibold text-slate-500">Status</label>
+          <Select value={filterStatus} onValueChange={(val) => setFilterStatus(val ?? "")}>
+            <SelectTrigger className="h-9"><SelectValue placeholder="All Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Status</SelectItem>
+              <SelectItem value="SUBMITTED">Submitted</SelectItem>
+              <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
+              <SelectItem value="INVESTIGATION">Investigation</SelectItem>
+              <SelectItem value="RESOLVED">Resolved</SelectItem>
+              <SelectItem value="CLOSED">Closed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1 w-full sm:w-[140px]">
+          <label className="text-xs font-semibold text-slate-500">Priority</label>
+          <Select value={filterPriority} onValueChange={(val) => setFilterPriority(val ?? "")}>
+            <SelectTrigger className="h-9"><SelectValue placeholder="All Priority" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Priority</SelectItem>
+              <SelectItem value="CRITICAL">Critical</SelectItem>
+              <SelectItem value="HIGH">High</SelectItem>
+              <SelectItem value="MEDIUM">Medium</SelectItem>
+              <SelectItem value="LOW">Low</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1 w-full sm:w-[180px]">
+          <label className="text-xs font-semibold text-slate-500">Category</label>
+          <Select value={filterCategory} onValueChange={(val) => setFilterCategory(val ?? "")}>
+            <SelectTrigger className="h-9"><SelectValue placeholder="All Categories" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Categories</SelectItem>
+              {categories.map(c => (
+                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1 w-full sm:w-[180px]">
+          <label className="text-xs font-semibold text-slate-500">Assigned To</label>
+          <Select value={filterAssignedTo} onValueChange={(val) => setFilterAssignedTo(val ?? "")}>
+            <SelectTrigger className="h-9"><SelectValue placeholder="Anyone" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Anyone</SelectItem>
+              <SelectItem value="UNASSIGNED">Unassigned Only</SelectItem>
+              {hrUsers.map(u => (
+                <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Button variant="ghost" onClick={clearFilters} className="h-9 px-3 text-slate-500" title="Clear Filters">
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+
       {/* Bulk Action Toolbar */}
       {selectedIds.size > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-4 animate-in slide-in-from-bottom-5">
@@ -206,6 +316,7 @@ export default function HRCasesTableClient({
         </div>
       )}
 
+      {/* Table */}
       <div className="rounded-md border border-slate-200 overflow-hidden relative">
         <div className="overflow-auto max-h-[600px]">
           <Table>
@@ -213,7 +324,7 @@ export default function HRCasesTableClient({
               <TableRow>
                 <TableHead className="w-[40px] pl-4">
                   <Checkbox 
-                    checked={selectedIds.size === grievances.length && grievances.length > 0} 
+                    checked={selectedIds.size === processedGrievances.length && processedGrievances.length > 0} 
                     onCheckedChange={toggleSelectAll} 
                   />
                 </TableHead>
@@ -245,16 +356,16 @@ export default function HRCasesTableClient({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedGrievances.map((g) => (
+              {processedGrievances.map((g) => (
                 <TableRow key={g.id} className={`h-10 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border-l-4 ${getSlaBorderColor(g.slaDueDate, g.status)}`}>
                   <TableCell className="pl-4">
                     <Checkbox checked={selectedIds.has(g.id)} onCheckedChange={() => toggleSelect(g.id)} />
                   </TableCell>
                   <TableCell className="font-medium text-slate-800 dark:text-slate-200">
-                    <Link href={`/hr/cases/${g.id}`} className="hover:underline text-indigo-600">{g.ticketNumber}</Link>
+                    <Link href={`/grievances/${g.id}`} className="hover:underline text-indigo-600">{g.ticketNumber}</Link>
                   </TableCell>
                   <TableCell className="max-w-[150px] truncate">{g.subject}</TableCell>
-                  <TableCell>{g.category.name}</TableCell>
+                  <TableCell>{g.category?.name || "None"}</TableCell>
                   <TableCell>
                     {g.isAnonymous ? <span className="italic text-slate-500">Anonymous</span> : g.employee?.name || "Unknown"}
                   </TableCell>
@@ -315,10 +426,10 @@ export default function HRCasesTableClient({
                   </TableCell>
                 </TableRow>
               ))}
-              {sortedGrievances.length === 0 && (
+              {processedGrievances.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={10} className="text-center py-12 text-slate-500">
-                    No cases found.
+                    No cases match the selected filters.
                   </TableCell>
                 </TableRow>
               )}

@@ -61,6 +61,8 @@ export default async function HRCasesPage() {
     select: { id: true, name: true }
   })
 
+  const categories = await prisma.category.findMany()
+
   return (
     <div className="space-y-4 text-sm">
       <div>
@@ -116,7 +118,11 @@ export default async function HRCasesPage() {
           <CardTitle>All Grievances</CardTitle>
         </CardHeader>
         <CardContent>
-          <HRCasesTableClient grievances={allGrievances} hrUsers={hrUsers} />
+          <HRCasesTableClient 
+            grievances={allGrievances} 
+            hrUsers={hrUsers} 
+            categories={categories}
+          />
         </CardContent>
       </Card>
     </div>
