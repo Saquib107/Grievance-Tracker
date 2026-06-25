@@ -4,6 +4,8 @@ import { redirect } from "next/navigation"
 import EmployeeLayout from "@/components/layout/EmployeeLayout"
 import HRLayout from "@/components/layout/HRLayout"
 
+import AdminLayout from "@/components/layout/AdminLayout"
+
 export default async function ProtectedLayout({
   children,
 }: {
@@ -15,8 +17,11 @@ export default async function ProtectedLayout({
     redirect("/login")
   }
 
-  // Choose layout based on role
-  if (session.user.role === "HR" || session.user.role === "ADMIN") {
+  if (session.user.role === "ADMIN") {
+    return <div className="theme-admin"><AdminLayout user={session.user}>{children}</AdminLayout></div>
+  }
+
+  if (session.user.role === "HR") {
     return <div className="theme-hr"><HRLayout user={session.user}>{children}</HRLayout></div>
   }
 

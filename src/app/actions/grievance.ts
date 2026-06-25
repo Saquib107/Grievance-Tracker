@@ -220,3 +220,51 @@ export async function bulkAssignGrievance(grievanceIds: string[], assignedToId: 
   revalidatePath("/hr/cases")
 }
 
+export async function processGrievanceApproval(
+  grievanceId: string, 
+  action: "APPROVE" | "REJECT", 
+  reason?: string
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session || session.user.role !== "HR") {
+      return { success: false, error: "Unauthorized" }
+    }
+
+    const updateData: any = {
+      status: action === "APPROVE" ? "APPROVED" : "REJECTED",
+    }
+
+    if (action === "APPROVE") {
+      updateData.approvedById = session.user.id
+      updateData.approvedAt = new Date()
+    } else {
+      updateData.rejectedById = session.user.id
+      updateData.rejectedAt = new Date()
+      updateData.rejectionReason = reason
+    }
+
+    const updated = await prisma.grievance.update({
+      where: { id: grievanceId },
+      data: updateData
+    })
+
+    await prisma.grievanceLog.create({
+      data: {
+        grievanceId,
+        changedBy: session.user.name || "HR System",
+        action: action === "APPROVE" ? "STATUS_CHANGED_TO_APPROVED" : "STATUS_CHANGED_TO_REJECTED",
+        details: action === "REJECT" ? `Rejected: ${reason}` : "Approved for assignment"
+      }
+    })
+
+    revalidatePath("/hr/approvals")
+    revalidatePath("/hr/cases")
+    
+    return { success: true, data: updated }
+  } catch (error) {
+    console.error("Error processing approval:", error)
+    return { success: false, error: "Failed to process grievance approval" }
+  }
+}
+

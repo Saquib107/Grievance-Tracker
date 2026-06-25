@@ -25,6 +25,8 @@ model User {
   
   grievances    Grievance[] @relation("EmployeeGrievances")
   assignedTo    Grievance[] @relation("AssignedGrievances")
+  approvedCases Grievance[] @relation("ApprovedGrievances")
+  rejectedCases Grievance[] @relation("RejectedGrievances")
   comments      Comment[]
 }
 
@@ -86,6 +88,14 @@ model Grievance {
   isAnonymous  Boolean   @default(false)
   
   rejectionReason String?
+  
+  approvedById    String?
+  approvedBy      User?     @relation("ApprovedGrievances", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvedAt      DateTime?
+  
+  rejectedById    String?
+  rejectedBy      User?     @relation("RejectedGrievances", fields: [rejectedById], references: [id], onDelete: SetNull)
+  rejectedAt      DateTime?
   
   escalationLevel Int       @default(0)
   slaDueDate      DateTime?

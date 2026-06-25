@@ -3,19 +3,21 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
-import { ShieldAlert, LayoutDashboard, Inbox, PieChart, Users, Settings, LogOut, FileText, UserPlus } from "lucide-react"
+import { ShieldAlert, LayoutDashboard, Settings, LogOut, Users, MapPin, Inbox, PieChart, FileText } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-export default function HRLayout({ user, children }: { user: any, children: React.ReactNode }) {
+export default function AdminLayout({ user, children }: { user: any, children: React.ReactNode }) {
   const pathname = usePathname()
 
   const links = [
-    { href: "/hr", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/hr/approvals", label: "Pending Approval", icon: ShieldAlert },
-    { href: "/hr/cases", label: "All Cases", icon: Inbox },
-    { href: "/hr/cases?assignedToMe=true", label: "Assigned Cases", icon: Users },
-    { href: "/hr/cases/new", label: "Log On-Behalf", icon: UserPlus },
-    { href: "/hr/reports", label: "Reports", icon: FileText },
+    { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/admin/cases", label: "All Cases", icon: Inbox },
+    { href: "/admin/users", label: "HR Management", icon: Users },
+    { href: "/admin/employees", label: "Employee Management", icon: Users },
+    { href: "/admin/sites", label: "Sites", icon: MapPin },
+    { href: "/admin/reports", label: "Reports", icon: FileText },
+    { href: "/admin/analytics", label: "Analytics", icon: PieChart },
+    { href: "/admin/settings", label: "Settings", icon: Settings },
   ]
 
   return (
@@ -29,7 +31,7 @@ export default function HRLayout({ user, children }: { user: any, children: Reac
         
         <div className="flex-1 overflow-y-auto py-6 px-3">
           <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4 px-3">
-            HR Management
+            Admin Panel
           </div>
           <nav className="space-y-1">
             {links.map((link) => {
@@ -79,7 +81,6 @@ export default function HRLayout({ user, children }: { user: any, children: Reac
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Mobile Header (only visible on small screens) */}
         <header className="md:hidden flex h-16 items-center justify-between px-4 bg-slate-900 text-white">
           <div className="flex items-center font-bold text-xl">
             <ShieldAlert className="h-6 w-6 mr-2 text-indigo-400" />
@@ -92,7 +93,6 @@ export default function HRLayout({ user, children }: { user: any, children: Reac
           </Avatar>
         </header>
 
-        {/* Main Content */}
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
             {children}
