@@ -16,7 +16,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "GrievanceHub",
-  description: "Secure Employee Grievance Management System",
+  description: "Employee grievance tracking and management portal",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
