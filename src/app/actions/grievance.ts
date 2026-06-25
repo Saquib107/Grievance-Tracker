@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { sendEmail } from "@/lib/email"
+import { analyzeGrievance } from "@/lib/ai"
 
 export async function submitGrievance(formData: FormData) {
   const session = await getServerSession(authOptions)
@@ -40,14 +41,22 @@ export async function submitGrievance(formData: FormData) {
   const count = await prisma.grievance.count()
   const ticketNumber = `GRV-${currentYear}-${String(count + 1).padStart(5, '0')}`
 
+  // Analyze the issue with Gemini AI
+  const aiResult = await analyzeGrievance(issue || description)
+  // If the form provided a priority other than LOW, respect the user's choice, otherwise use AI.
+  const finalPriority = priority !== "LOW" ? priority : (aiResult?.priority || "LOW")
+  const finalSentiment = aiResult?.sentiment || "Neutral"
+
   // Calculate SLA Due Date
   const slaDueDate = new Date()
-  switch (priority) {
+  switch (finalPriority) {
     case 'CRITICAL': slaDueDate.setHours(slaDueDate.getHours() + 24); break;
-    case 'HIGH': slaDueDate.setDate(slaDueDate.getDate() + 3); break;
-    case 'MEDIUM': slaDueDate.setDate(slaDueDate.getDate() + 5); break;
-    case 'LOW': default: slaDueDate.setDate(slaDueDate.getDate() + 7); break;
+    case 'HIGH': slaDueDate.setHours(slaDueDate.getHours() + 48); break; // 48 Hrs
+    case 'MEDIUM': slaDueDate.setDate(slaDueDate.getDate() + 3); break; // 3 Days
+    case 'LOW': default: slaDueDate.setDate(slaDueDate.getDate() + 7); break; // 7 Days
   }
+
+  const onBehalf = formData.get("onBehalf") === "true"
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id }
@@ -60,10 +69,11 @@ export async function submitGrievance(formData: FormData) {
       ticketNumber,
       subject,
       description,
-      priority,
+      priority: finalPriority,
+      sentiment: finalSentiment,
       categoryId: categoryId || undefined,
       isAnonymous,
-      employeeId: session.user.id,
+      employeeId: onBehalf ? undefined : session.user.id,
       department: user.department || "General",
       status: "SUBMITTED",
       attachments: attachment ? JSON.stringify([attachment]) : "[]",
@@ -80,8 +90,17 @@ export async function submitGrievance(formData: FormData) {
     }
   })
 
+  await prisma.grievanceLog.create({
+    data: {
+      grievanceId: newGrievance.id,
+      changedBy: user.name || "SYSTEM",
+      action: "GRIEVANCE_SUBMITTED",
+      details: onBehalf ? "Submitted on behalf of employee by HR/Admin" : "Submitted by employee"
+    }
+  })
+
   revalidatePath("/dashboard")
-  redirect(`/grievances/${newGrievance.id}`)
+  redirect(onBehalf ? `/hr/cases` : `/grievances/${newGrievance.id}`)
 }
 
 export async function updateGrievanceTracker(grievanceId: string, data: any) {
