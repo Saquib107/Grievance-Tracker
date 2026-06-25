@@ -1,89 +1,86 @@
-import { PrismaClient } from "@prisma/client"
-import bcrypt from "bcryptjs"
+import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
-  const password = await bcrypt.hash("password123", 10)
+  console.log("Seeding database...")
 
-  // Seed Users
+  // Create Sites
+  const siteA = await prisma.site.upsert({
+    where: { code: 'SITE-A' },
+    update: {},
+    create: {
+      name: 'Main Manufacturing Plant',
+      code: 'SITE-A',
+      location: 'Mumbai'
+    }
+  })
+
+  const siteB = await prisma.site.upsert({
+    where: { code: 'SITE-B' },
+    update: {},
+    create: {
+      name: 'Logistics Hub',
+      code: 'SITE-B',
+      location: 'Delhi'
+    }
+  })
+
+  // Create Admin User
+  const adminPassword = await bcrypt.hash('admin123', 10)
   const admin = await prisma.user.upsert({
-    where: { email: "admin@pgepl.com" },
+    where: { email: 'admin@pgepl.com' },
     update: {},
     create: {
-      email: "admin@pgepl.com",
-      name: "Admin User",
-      password,
-      role: "ADMIN",
-      department: "Administration",
-    },
+      email: 'admin@pgepl.com',
+      password: adminPassword,
+      name: 'System Admin',
+      role: 'ADMIN',
+      department: 'IT',
+      siteId: siteA.id
+    }
   })
 
+  // Create HR User
+  const hrPassword = await bcrypt.hash('hr123', 10)
   const hr = await prisma.user.upsert({
-    where: { email: "hr@pgepl.com" },
+    where: { email: 'hr@pgepl.com' },
     update: {},
     create: {
-      email: "hr@pgepl.com",
-      name: "HR User",
-      password,
-      role: "HR",
-      department: "Human Resources",
-    },
+      email: 'hr@pgepl.com',
+      password: hrPassword,
+      name: 'HR Manager',
+      role: 'HR',
+      department: 'Human Resources',
+      siteId: siteA.id
+    }
   })
 
+  // Create Employee
+  const empPassword = await bcrypt.hash('emp123', 10)
   const employee = await prisma.user.upsert({
-    where: { email: "employee@pgepl.com" },
+    where: { email: 'employee@pgepl.com' },
     update: {},
     create: {
-      email: "employee@pgepl.com",
-      name: "John Employee",
-      password,
-      role: "EMPLOYEE",
-      department: "Engineering",
-    },
+      email: 'employee@pgepl.com',
+      password: empPassword,
+      name: 'John Doe',
+      role: 'EMPLOYEE',
+      department: 'Assembly',
+      siteId: siteB.id
+    }
   })
 
-  const manager = await prisma.user.upsert({
-    where: { email: "manager@pgepl.com" },
-    update: {},
-    create: {
-      email: "manager@pgepl.com",
-      name: "Jane Manager",
-      password,
-      role: "MANAGER",
-      department: "Engineering",
-    },
-  })
-
-  // Seed Categories
-  const categories = [
-    "Workplace Harassment",
-    "Discrimination",
-    "Payroll Issues",
-    "Leave Issues",
-    "Manager Conduct",
-    "Safety Concerns",
-    "Policy Violation",
-    "Other",
-  ]
-
-  for (const name of categories) {
-    await prisma.category.upsert({
-      where: { name },
-      update: {},
-      create: { name },
-    })
-  }
-
-  console.log({ admin, hr, employee, manager })
+  console.log({ admin, hr, employee })
+  console.log("Database seeded successfully!")
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect()
-  })
-  .catch(async (e) => {
+  .catch((e) => {
     console.error(e)
-    await prisma.$disconnect()
     process.exit(1)
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
   })
