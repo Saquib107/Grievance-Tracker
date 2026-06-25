@@ -16,21 +16,21 @@ export default async function HRAnalyticsPage() {
   
   const pendingCount = await prisma.grievance.count({
     where: { 
-      currentStatus: { in: ["PENDING", "IN_PROGRESS", "ASSIGNED"] }
+      status: { in: ["SUBMITTED", "UNDER_REVIEW", "APPROVED", "ASSIGNED", "IN_PROGRESS"] }
     }
   })
   
   const resolvedCount = await prisma.grievance.count({
     where: { 
-      solved: "RESOLVED"
+      status: { in: ["RESOLVED", "CLOSED"] }
     }
   })
 
-  // Calculate overdue (where SLA date is past due and it's not resolved)
+  // Calculate overdue (where SLA date is past due and it's not resolved/closed/rejected)
   const overdueCount = await prisma.grievance.count({
     where: {
       slaDueDate: { lt: new Date() },
-      solved: { not: "RESOLVED" }
+      status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] }
     }
   })
 
