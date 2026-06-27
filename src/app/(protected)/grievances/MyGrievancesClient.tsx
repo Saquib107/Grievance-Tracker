@@ -28,8 +28,8 @@ export default function MyGrievancesClient({
     if (searchQuery) {
       const lower = searchQuery.toLowerCase()
       result = result.filter(g => 
-        g.ticketNumber.toLowerCase().includes(lower) || 
-        g.subject?.toLowerCase().includes(lower)
+        (g.ticketNumber || "").toLowerCase().includes(lower) || 
+        (g.subject || "").toLowerCase().includes(lower)
       )
     }
 

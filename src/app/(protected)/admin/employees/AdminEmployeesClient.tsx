@@ -45,7 +45,7 @@ export default function AdminEmployeesClient({ initialEmployees, sites }: { init
     let result = employees
     if (filterSearch) {
       const q = filterSearch.toLowerCase()
-      result = result.filter(e => e.name?.toLowerCase().includes(q) || e.employeeIdStr?.toLowerCase().includes(q) || e.email?.toLowerCase().includes(q))
+      result = result.filter(e => (e.name || "").toLowerCase().includes(q) || (e.employeeIdStr || "").toLowerCase().includes(q) || (e.email || "").toLowerCase().includes(q))
     }
     if (filterSite !== "ALL") result = result.filter(e => e.site?.id === filterSite)
     if (filterDept !== "ALL") result = result.filter(e => e.department === filterDept)

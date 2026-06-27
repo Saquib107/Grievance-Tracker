@@ -84,8 +84,8 @@ export default function ApprovalsClient({ initialCases }: { initialCases: any[] 
   }
 
   const filteredCases = cases.filter(c => {
-    const matchesSearch = c.ticketNumber.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          c.subject.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = (c.ticketNumber || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (c.subject || "").toLowerCase().includes(searchTerm.toLowerCase())
     const matchesSite = siteFilter === "ALL" || c.site?.name === siteFilter
     const matchesCategory = categoryFilter === "ALL" || c.category?.name === categoryFilter
     const matchesPriority = priorityFilter === "ALL" || c.priority === priorityFilter

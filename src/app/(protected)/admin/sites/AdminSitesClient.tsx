@@ -41,7 +41,7 @@ export default function AdminSitesClient({ initialSites }: { initialSites: any[]
     let result = initialSites
     if (filterSearch) {
       const q = filterSearch.toLowerCase()
-      result = result.filter(s => s.name?.toLowerCase().includes(q) || s.code?.toLowerCase().includes(q) || s.location?.toLowerCase().includes(q))
+      result = result.filter(s => (s.name || "").toLowerCase().includes(q) || (s.code || "").toLowerCase().includes(q) || (s.location || "").toLowerCase().includes(q))
     }
     if (filterStatus !== "ALL") {
       if (filterStatus === "ACTIVE") result = result.filter(s => s.isActive)

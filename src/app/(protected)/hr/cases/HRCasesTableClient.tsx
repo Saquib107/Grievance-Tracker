@@ -73,10 +73,11 @@ export default function HRCasesTableClient({
     if (filterSearch) {
       const lower = filterSearch.toLowerCase()
       result = result.filter(g => 
-        g.ticketNumber.toLowerCase().includes(lower) || 
-        g.subject.toLowerCase().includes(lower) ||
-        g.employee?.name?.toLowerCase().includes(lower) ||
-        g.location?.toLowerCase().includes(lower)
+        (g.ticketNumber || "").toLowerCase().includes(lower) || 
+        (g.subject || "").toLowerCase().includes(lower) ||
+        (g.employee?.name || "").toLowerCase().includes(lower) ||
+        (g.location || "").toLowerCase().includes(lower) ||
+        (g.site?.name || "").toLowerCase().includes(lower)
       )
     }
     if (filterStatus !== "ALL") result = result.filter(g => g.status === filterStatus)

@@ -54,7 +54,7 @@ export default function UsersClient({ initialUsers, sites, unassignedCasesCount 
     let result = users
     if (filterSearch) {
       const q = filterSearch.toLowerCase()
-      result = result.filter(u => u.name?.toLowerCase().includes(q) || u.employeeIdStr?.toLowerCase().includes(q))
+      result = result.filter(u => (u.name || "").toLowerCase().includes(q) || (u.employeeIdStr || "").toLowerCase().includes(q))
     }
     if (filterSite !== "ALL") result = result.filter(u => u.site?.id === filterSite)
     if (filterStatus !== "ALL") {
