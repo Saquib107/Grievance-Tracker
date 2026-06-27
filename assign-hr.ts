@@ -9,7 +9,7 @@ async function assignHR() {
   // Find all distinct concerned persons
   const grievances = await prisma.grievance.findMany({
     where: {
-      concernedPerson: { not: null, not: "" }
+      concernedPerson: { not: null }
     },
     select: {
       id: true,
