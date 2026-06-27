@@ -13,9 +13,11 @@ export default async function HROnBehalfPage() {
 
   const sites = await prisma.site.findMany({ where: { isActive: true } })
 
+  const categories = await prisma.category.findMany()
+
   return (
-    <div className="py-6">
-      <HROnBehalfForm sites={sites} />
+    <div className="max-w-4xl mx-auto py-8 px-4 space-y-6">
+      <HROnBehalfForm sites={sites} categories={categories} />
     </div>
   )
 }

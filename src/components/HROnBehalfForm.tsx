@@ -12,14 +12,7 @@ import { Loader2, UserPlus, Paperclip, Save, UserX } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 
-const CATEGORIES = [
-  { id: "c1", name: "Payroll & Salary", sla: 3 },
-  { id: "c2", name: "Harassment", sla: 2 },
-  { id: "c3", name: "Leave & Attendance", sla: 5 },
-  { id: "c4", name: "Safety & Environment", sla: 1 },
-]
-
-export default function HROnBehalfForm({ sites = [] }: { sites?: any[] }) {
+export default function HROnBehalfForm({ sites = [], categories = [] }: { sites?: any[], categories?: any[] }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDrafting, setIsDrafting] = useState(false)
   const [error, setError] = useState("")
@@ -73,9 +66,8 @@ export default function HROnBehalfForm({ sites = [] }: { sites?: any[] }) {
   }
 
   const getSlaText = () => {
-    const cat = CATEGORIES.find(c => c.id === selectedCategory)
-    if (!cat) return null
-    return `${cat.sla} Working Days`
+    // Basic mock since SLA days is no longer hardcoded in array
+    return `Standard SLA`
   }
 
   return (
@@ -150,7 +142,7 @@ export default function HROnBehalfForm({ sites = [] }: { sites?: any[] }) {
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map(c => (
+                  {categories.map(c => (
                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                   ))}
                 </SelectContent>
