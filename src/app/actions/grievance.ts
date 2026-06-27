@@ -19,11 +19,12 @@ export async function submitGrievance(formData: FormData) {
   const categoryId = formData.get("categoryId") as string
   const priority = formData.get("priority") as string || "LOW"
   const description = formData.get("description") as string
-  const isAnonymous = formData.get("isAnonymous") === "true"
+  const isAnonymous = false // Removed from UI
   const attachment = formData.get("attachment") as string
 
   // New Excel Tracker Fields
   const empIdGatepass = formData.get("empIdGatepass") as string
+  const siteId = formData.get("siteId") as string
   const location = formData.get("location") as string
   const grievantName = formData.get("grievantName") as string
   const grievantContact = formData.get("grievantContact") as string
@@ -32,7 +33,17 @@ export async function submitGrievance(formData: FormData) {
   const currentStatus = formData.get("currentStatus") as string || "PENDING"
   const solved = formData.get("solved") as string || "PENDING"
 
-  if ((!subject || !categoryId || !description) && !issue) {
+  // New Employee Submission Fields
+  const incidentDateStr = formData.get("incidentDate") as string
+  const incidentDate = incidentDateStr ? new Date(incidentDateStr) : undefined
+  const personsInvolved = formData.get("personsInvolved") as string
+  const expectedOutcome = formData.get("expectedOutcome") as string
+  
+  // DRAFT check
+  const actionType = formData.get("actionType") as string
+  const isDraft = actionType === "DRAFT"
+
+  if (!isDraft && (!subject || !categoryId || !description) && !issue) {
     throw new Error("Missing required fields")
   }
 
@@ -75,17 +86,22 @@ export async function submitGrievance(formData: FormData) {
       isAnonymous,
       employeeId: onBehalf ? undefined : session.user.id,
       department: user.department || "General",
-      status: "SUBMITTED",
+      status: isDraft ? "DRAFT" : "SUBMITTED",
       slaDueDate,
       // Excel fields
       empIdGatepass,
+      siteId: siteId || undefined,
       location,
       grievantName,
       grievantContact,
       concernedPerson,
       issue,
       currentStatus,
-      solved
+      solved,
+      // New UX Fields
+      incidentDate,
+      personsInvolved,
+      expectedOutcome
     }
   })
 
