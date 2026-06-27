@@ -14,6 +14,7 @@ export default async function AdminSitesPage() {
   const sites = await prisma.site.findMany({
     include: {
       users: { where: { role: "HR" }, select: { name: true } },
+      grievances: { where: { status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] } }, select: { id: true } },
       _count: {
         select: {
           users: { where: { role: "EMPLOYEE" } },
@@ -30,9 +31,11 @@ export default async function AdminSitesPage() {
     code: site.code || "N/A",
     name: site.name,
     location: site.location || "N/A",
-    hrAssigned: site.users.map(u => u.name).join(", ") || "None",
+    isActive: site.isActive,
+    hrAssignedList: site.users.map(u => u.name),
     totalEmployees: site._count.users,
-    totalCases: site._count.grievances
+    totalCases: site._count.grievances,
+    openCases: site.grievances.length
   }))
 
   return <AdminSitesClient initialSites={formattedSites} />

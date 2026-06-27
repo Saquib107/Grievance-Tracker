@@ -58,5 +58,9 @@ export default async function AdminUsersPage() {
     orderBy: { name: 'asc' }
   })
 
-  return <UsersClient initialUsers={usersWithMetrics} sites={sites} />
+  const unassignedCasesCount = await prisma.grievance.count({
+    where: { assignedToId: null, status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] } }
+  })
+
+  return <UsersClient initialUsers={usersWithMetrics} sites={sites} unassignedCasesCount={unassignedCasesCount} />
 }

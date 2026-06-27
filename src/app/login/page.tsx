@@ -109,8 +109,9 @@ export default function LoginPage() {
           
           <div className="text-xs text-slate-600 pt-4 border-t border-slate-800/50 w-full">
             <p>Demo Accounts:</p>
-            <p>employee@pgepl.com / password123</p>
-            <p>hr@pgepl.com / password123</p>
+            <p>employee@pgepl.com / emp123</p>
+            <p>hr@pgepl.com / hr123</p>
+            <p>admin@pgepl.com / admin123</p>
           </div>
         </CardFooter>
       </Card>

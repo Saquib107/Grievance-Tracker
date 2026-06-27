@@ -13,7 +13,7 @@ export default async function AdminEmployeesPage() {
 
   const employees = await prisma.user.findMany({
     where: { role: "EMPLOYEE" },
-    include: { site: { select: { name: true } } },
+    include: { site: { include: { users: { where: { role: "HR" }, select: { name: true } } } } },
     orderBy: { createdAt: 'desc' }
   })
 

@@ -40,6 +40,7 @@ model Site {
   name        String      @unique
   code        String?     @unique
   location    String?
+  isActive    Boolean     @default(true)
   
   users       User[]
   grievances  Grievance[]
@@ -81,12 +82,17 @@ model Grievance {
   dateResolved    DateTime?
   remark          String?
   
+  // New Employee Submission Fields
+  incidentDate    DateTime?
+  personsInvolved String?
+  expectedOutcome String?
+  
   categoryId   String?
   category     Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   
   department   String?
   priority     String    @default("LOW") // LOW, MEDIUM, HIGH, CRITICAL
-  status       String    @default("SUBMITTED") // SUBMITTED, UNDER_REVIEW, INVESTIGATION, ACTION_TAKEN, RESOLVED, CLOSED, REJECTED
+  status       String    @default("SUBMITTED") // DRAFT, SUBMITTED, UNDER_REVIEW, INVESTIGATION, ACTION_TAKEN, RESOLVED, CLOSED, REJECTED
   
   subject      String?
   description  String?

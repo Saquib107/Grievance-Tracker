@@ -16,7 +16,7 @@ export default async function Home() {
         </div>
         {session ? (
           <Link href="/dashboard" className="inline-flex h-9 items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:hover:bg-slate-800 dark:hover:text-slate-50">
-            Go to Dashboard
+            Enter Platform
           </Link>
         ) : (
           <Link href="/login" className="inline-flex h-9 items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:hover:bg-slate-800 dark:hover:text-slate-50">
@@ -46,7 +46,7 @@ export default async function Home() {
         <div className="flex flex-col sm:flex-row gap-4 items-center">
           {session ? (
             <Link href="/dashboard" className="inline-flex h-14 items-center justify-center rounded-full bg-indigo-600 px-8 text-lg font-medium text-white shadow-xl shadow-indigo-600/20 transition-all hover:scale-105 hover:bg-indigo-700">
-              Enter Dashboard <ArrowRight className="ml-2 h-5 w-5" />
+              Enter Platform <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           ) : (
             <Link href="/login" className="inline-flex h-14 items-center justify-center rounded-full bg-indigo-600 px-8 text-lg font-medium text-white shadow-xl shadow-indigo-600/20 transition-all hover:scale-105 hover:bg-indigo-700">

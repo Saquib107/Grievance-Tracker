@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,11 +10,11 @@ import { createHRUser, resetHRPassword, deleteUser } from "@/app/actions/admin"
 import { updateEmployeeStatus } from "@/app/actions/employees"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
-import { MoreHorizontal, Key, BadgeCheck, Clock, Inbox, CheckCircle2, UserPlus, Activity, Ban, CheckCircle, Trash2 } from "lucide-react"
+import { MoreHorizontal, Key, BadgeCheck, Clock, Inbox, CheckCircle2, UserPlus, Activity, Ban, CheckCircle, Trash2, Search, Download, Printer } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 
-export default function UsersClient({ initialUsers, sites }: { initialUsers: any[], sites: any[] }) {
+export default function UsersClient({ initialUsers, sites, unassignedCasesCount = 0 }: { initialUsers: any[], sites: any[], unassignedCasesCount?: number }) {
   const [users, setUsers] = useState(initialUsers)
   const [isOpen, setIsOpen] = useState(false)
   const [performanceOpen, setPerformanceOpen] = useState(false)
@@ -35,6 +35,39 @@ export default function UsersClient({ initialUsers, sites }: { initialUsers: any
   const [resetModalOpen, setResetModalOpen] = useState(false)
   const [resetUserId, setResetUserId] = useState("")
   const [newPassword, setNewPassword] = useState("")
+
+  const [filterSearch, setFilterSearch] = useState("")
+  const [filterSite, setFilterSite] = useState("ALL")
+  const [filterStatus, setFilterStatus] = useState("ALL")
+  
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
+  const totalHR = users.length
+  const activeHR = users.filter(u => u.isActive).length
+  const inactiveHR = users.filter(u => !u.isActive).length
+  const totalAssignedCases = users.reduce((acc, u) => acc + (u.casesAssigned || 0), 0)
+  const averageCases = totalHR > 0 ? Math.round(totalAssignedCases / totalHR) : 0
+  const maxLoad = Math.max(...users.map(u => u.casesAssigned || 0), 20)
+
+  const processedUsers = useMemo(() => {
+    let result = users
+    if (filterSearch) {
+      const q = filterSearch.toLowerCase()
+      result = result.filter(u => u.name?.toLowerCase().includes(q) || u.employeeIdStr?.toLowerCase().includes(q))
+    }
+    if (filterSite !== "ALL") result = result.filter(u => u.site?.id === filterSite)
+    if (filterStatus !== "ALL") {
+      if (filterStatus === "ACTIVE") result = result.filter(u => u.isActive)
+      if (filterStatus === "INACTIVE") result = result.filter(u => !u.isActive)
+    }
+    return result
+  }, [users, filterSearch, filterSite, filterStatus])
+
+  useMemo(() => { setCurrentPage(1) }, [filterSearch, filterSite, filterStatus])
+
+  const paginatedUsers = processedUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+  const totalPages = Math.ceil(processedUsers.length / itemsPerPage)
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -156,6 +189,83 @@ export default function UsersClient({ initialUsers, sites }: { initialUsers: any
         </Dialog>
       </div>
 
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+          <div className="text-sm font-medium text-slate-500 mb-1">Total HR Users</div>
+          <div className="text-3xl font-bold text-slate-900 dark:text-white">{totalHR}</div>
+          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between text-sm">
+            <span className="text-emerald-600 font-medium">{activeHR} Active</span>
+            <span className="text-rose-600 font-medium">{inactiveHR} Inactive</span>
+          </div>
+        </div>
+        
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+          <div className="text-sm font-medium text-slate-500 mb-1">Assigned Cases</div>
+          <div className="text-3xl font-bold text-slate-900 dark:text-white">{totalAssignedCases}</div>
+          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between text-sm">
+            <span className="text-indigo-600 font-medium">Across all HRs</span>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+          <div className="text-sm font-medium text-slate-500 mb-1">Average Workload</div>
+          <div className="text-3xl font-bold text-slate-900 dark:text-white">{averageCases}</div>
+          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between text-sm">
+            <span className="text-slate-500 font-medium">Cases per HR</span>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+          <div className="text-sm font-medium text-slate-500 mb-1">Unassigned Cases</div>
+          <div className="text-3xl font-bold text-rose-600 dark:text-rose-400">{unassignedCasesCount}</div>
+          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between text-sm">
+            <span className="text-rose-600 font-medium cursor-pointer hover:underline">Needs assignment</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters and Search */}
+      <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row flex-wrap gap-4 items-end">
+        <div className="space-y-1 flex-1 min-w-[200px]">
+          <Label className="text-xs font-semibold text-slate-500">Search</Label>
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+            <Input placeholder="🔍 Search HR Name or ID..." value={filterSearch} onChange={e => setFilterSearch(e.target.value)} className="h-9 pl-9" />
+          </div>
+        </div>
+        <div className="space-y-1 w-full sm:w-[150px]">
+          <Label className="text-xs font-semibold text-slate-500">Site</Label>
+          <Select value={filterSite} onValueChange={val => setFilterSite(val || "")}>
+            <SelectTrigger className="h-9"><SelectValue placeholder="All Sites" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Sites</SelectItem>
+              {sites.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1 w-full sm:w-[150px]">
+          <Label className="text-xs font-semibold text-slate-500">Status</Label>
+          <Select value={filterStatus} onValueChange={val => setFilterStatus(val || "")}>
+            <SelectTrigger className="h-9"><SelectValue placeholder="All Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Status</SelectItem>
+              <SelectItem value="ACTIVE">Active</SelectItem>
+              <SelectItem value="INACTIVE">Inactive</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="flex gap-2">
+          <Button variant="outline" className="h-9 bg-white" onClick={() => window.print()}>
+            <Printer className="h-4 w-4 mr-2" /> Print
+          </Button>
+          <Button variant="outline" className="h-9 bg-white">
+            <Download className="h-4 w-4 mr-2" /> Export CSV
+          </Button>
+        </div>
+      </div>
+
       {/* HR Performance Dashboard Modal */}
       <Dialog open={performanceOpen} onOpenChange={setPerformanceOpen}>
         <DialogContent className="sm:max-w-[600px]">
@@ -216,43 +326,73 @@ export default function UsersClient({ initialUsers, sites }: { initialUsers: any
           <table className="w-full text-sm text-left">
             <thead className="text-xs text-slate-500 bg-slate-50 uppercase border-b dark:bg-slate-900/50 dark:text-slate-400 dark:border-slate-800">
               <tr>
-                <th className="px-6 py-4 font-medium">Name</th>
-                <th className="px-6 py-4 font-medium">Email</th>
+                <th className="px-6 py-4 font-medium">HR Name & ID</th>
                 <th className="px-6 py-4 font-medium">Site</th>
                 <th className="px-6 py-4 font-medium">Status</th>
                 <th className="px-6 py-4 font-medium">Cases Assigned</th>
-                <th className="px-6 py-4 font-medium text-right">Actions</th>
+                <th className="px-6 py-4 font-medium w-48">Workload</th>
+                <th className="px-6 py-4 font-medium text-right pr-6">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-              {users.map((u) => (
-                <tr key={u.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-slate-900 dark:text-white">{u.name}</div>
-                    <div className="text-xs text-slate-500 font-mono">{u.employeeIdStr}</div>
+              {paginatedUsers.map((u) => (
+                <tr key={u.id} className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors h-[60px] border-l-4 border-transparent hover:border-indigo-400">
+                  <td className="px-6">
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm shrink-0">
+                        {u.name?.charAt(0) || "U"}
+                      </div>
+                      <div>
+                        <div className="font-medium text-slate-900 dark:text-white">{u.name}</div>
+                        <div className="text-xs text-slate-500 font-mono">{u.employeeIdStr}</div>
+                      </div>
+                    </div>
                   </td>
-                  <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{u.email}</td>
-                  <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{u.site?.name || "Unassigned"}</td>
-                  <td className="px-6 py-4">
-                    <Badge variant="outline" className={u.isActive ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-700 border-red-200"}>
-                      {u.isActive ? "Active" : "Disabled"}
+                  <td className="px-6 text-slate-600 dark:text-slate-300 font-medium">{u.site?.name || "Unassigned"}</td>
+                  <td className="px-6">
+                    {u.isActive ? (
+                      <Badge variant="outline" className="bg-emerald-100 text-emerald-700 border-none px-3 py-1 font-semibold text-xs rounded-full shadow-sm">🟢 Active</Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-rose-100 text-rose-700 border-none px-3 py-1 font-semibold text-xs rounded-full shadow-sm">🔴 Inactive</Badge>
+                    )}
+                  </td>
+                  <td className="px-6">
+                    <Badge variant="outline" className="bg-purple-100 text-purple-700 border-none px-3 py-1 font-semibold text-xs rounded-full shadow-sm">
+                      🟣 {u.casesAssigned || 0} Cases
                     </Badge>
                   </td>
-                  <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
-                    <Badge variant="secondary">{u.casesAssigned}</Badge>
+                  <td className="px-6">
+                    <div className="flex flex-col gap-1 w-full">
+                      <div className="flex justify-between text-xs text-slate-500 font-medium">
+                        <span>Load</span>
+                        <span>{Math.round(((u.casesAssigned || 0) / maxLoad) * 100)}%</span>
+                      </div>
+                      <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+                        <div 
+                          className={`h-2 rounded-full ${
+                            ((u.casesAssigned || 0) / maxLoad) > 0.8 ? 'bg-rose-500' :
+                            ((u.casesAssigned || 0) / maxLoad) > 0.5 ? 'bg-amber-500' :
+                            'bg-indigo-500'
+                          }`}
+                          style={{ width: `${Math.min(100, Math.round(((u.casesAssigned || 0) / maxLoad) * 100))}%` }}
+                        ></div>
+                      </div>
+                    </div>
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 text-right pr-6">
                     <DropdownMenu>
-                      <DropdownMenuTrigger className="h-8 w-8 p-0 inline-flex items-center justify-center rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"><span className="sr-only">Open menu</span><MoreHorizontal className="h-4 w-4" /></DropdownMenuTrigger>
+                      <DropdownMenuTrigger className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors focus:outline-none">
+                        <MoreHorizontal className="h-4 w-4 text-slate-500" />
+                      </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => openPerformance(u)}>
-                          <Activity className="mr-2 h-4 w-4" /> Performance
+                          <Activity className="mr-2 h-4 w-4" /> View Performance
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => { setResetUserId(u.id); setResetModalOpen(true); }}>
                           <Key className="mr-2 h-4 w-4" /> Reset Password
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => toggleStatus(u.id, u.isActive)}>
-                          {u.isActive ? <Ban className="mr-2 h-4 w-4" /> : <CheckCircle className="mr-2 h-4 w-4" />} 
+                          {u.isActive ? <Ban className="mr-2 h-4 w-4 text-red-500" /> : <CheckCircle className="mr-2 h-4 w-4 text-emerald-500" />} 
                           {u.isActive ? "Deactivate HR" : "Activate HR"}
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-red-600 focus:bg-red-50 focus:text-red-700" onClick={() => handleDelete(u.id)}>
@@ -263,9 +403,37 @@ export default function UsersClient({ initialUsers, sites }: { initialUsers: any
                   </td>
                 </tr>
               ))}
+              {paginatedUsers.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="text-center py-16">
+                    <div className="flex flex-col items-center justify-center space-y-3">
+                      <div className="text-4xl">👥</div>
+                      <h3 className="text-lg font-medium text-slate-900 dark:text-white">No HR Users Found</h3>
+                      <p className="text-slate-500">You haven't added any HR users yet, or none match your filters.</p>
+                      <Button variant="outline" className="mt-2" onClick={() => setIsOpen(true)}>Add HR User</Button>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+            <div className="text-sm text-slate-500">
+              Showing {(currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, processedUsers.length)} of {processedUsers.length}
+            </div>
+            <div className="flex gap-1">
+              <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>&lt; Previous</Button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <Button key={page} variant={currentPage === page ? "default" : "ghost"} size="sm" className="w-9" onClick={() => setCurrentPage(page)}>{page}</Button>
+              ))}
+              <Button variant="outline" size="sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>Next &gt;</Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -2,7 +2,6 @@ import { getServerSession } from "next-auth/next"
 import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import EmployeeDashboard from "@/components/dashboard/EmployeeDashboard"
 import HRDashboard from "@/components/dashboard/HRDashboard"
 
 export default async function DashboardPage() {
@@ -20,23 +19,6 @@ export default async function DashboardPage() {
     redirect("/hr")
   }
 
-  // Employee Dashboard Data Fetching
-  const activeGrievances = await prisma.grievance.findMany({
-    where: { 
-      employeeId: userId,
-      status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] }
-    },
-    orderBy: { createdAt: 'desc' },
-    include: { 
-      category: true,
-      assignedTo: { select: { name: true } }
-    }
-  })
-
-  return (
-    <EmployeeDashboard 
-      user={session.user} 
-      activeGrievances={activeGrievances} 
-    />
-  )
+  // Employee role defaults to their grievances list instead of a dashboard
+  redirect("/grievances")
 }

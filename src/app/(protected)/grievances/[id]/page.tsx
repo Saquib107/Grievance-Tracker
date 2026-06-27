@@ -8,7 +8,8 @@ import { Separator } from "@/components/ui/separator"
 import ActivityTimeline from "./ActivityTimeline"
 import ResolutionNotesForm from "./ResolutionNotesForm"
 import SatisfactionSurvey from "./SatisfactionSurvey"
-import { Clock, ShieldAlert, User, Briefcase, Paperclip, CheckCircle2, Calendar } from "lucide-react"
+import EmployeeCommentSection from "./EmployeeCommentSection"
+import { Clock, ShieldAlert, User, Briefcase, Paperclip, CheckCircle2, Calendar, Timer } from "lucide-react"
 
 export default async function GrievanceDetailsPage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions)
@@ -88,10 +89,15 @@ export default async function GrievanceDetailsPage({ params }: { params: { id: s
           <Badge variant="outline" className={`${getPriorityColor(grievance.priority)} px-3 py-1`}>
             {grievance.priority} Priority
           </Badge>
-          <div className="flex items-center text-sm text-slate-500">
-            <Calendar className="w-4 h-4 mr-2" />
-            Submitted: {new Date(grievance.createdAt).toLocaleDateString()}
-          </div>
+          
+          {grievance.slaDueDate && grievance.status !== 'RESOLVED' && grievance.status !== 'CLOSED' && grievance.status !== 'REJECTED' && (
+            <div className="flex items-center text-sm font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 px-3 py-1.5 rounded-md border border-amber-200 dark:border-amber-900/50">
+              <Timer className="w-4 h-4 mr-2" />
+              {new Date(grievance.slaDueDate) < new Date() 
+                ? "SLA Overdue" 
+                : `Expected Response: ${Math.ceil((new Date(grievance.slaDueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} Days`}
+            </div>
+          )}
         </div>
       </div>
 
@@ -152,6 +158,11 @@ export default async function GrievanceDetailsPage({ params }: { params: { id: s
                 )}
               </CardContent>
             </Card>
+          )}
+
+          {/* Secure Chat */}
+          {!isHR && (
+            <EmployeeCommentSection grievance={grievance} currentUser={session.user} />
           )}
 
           {/* Activity Timeline */}
@@ -229,7 +240,7 @@ export default async function GrievanceDetailsPage({ params }: { params: { id: s
                   {grievance.assignedTo ? (
                     <>
                       <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                      {grievance.assignedTo.name}
+                      {grievance.isAnonymous && !isHR ? "Assigned HR Team" : grievance.assignedTo.name}
                     </>
                   ) : (
                     <>

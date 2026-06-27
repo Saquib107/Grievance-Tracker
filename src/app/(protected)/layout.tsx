@@ -6,6 +6,8 @@ import HRLayout from "@/components/layout/HRLayout"
 
 import AdminLayout from "@/components/layout/AdminLayout"
 
+import { prisma } from "@/lib/prisma"
+
 export default async function ProtectedLayout({
   children,
 }: {
@@ -22,7 +24,15 @@ export default async function ProtectedLayout({
   }
 
   if (session.user.role === "HR") {
-    return <div className="theme-hr"><HRLayout user={session.user}>{children}</HRLayout></div>
+    // Fetch HR specific badges
+    const pending = await prisma.grievance.count({
+      where: { status: { in: ["SUBMITTED", "UNDER_REVIEW"] } }
+    })
+    const assigned = await prisma.grievance.count({
+      where: { assignedToId: session.user.id, status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] } }
+    })
+    
+    return <div className="theme-hr"><HRLayout user={session.user} badges={{ pending, assigned }}>{children}</HRLayout></div>
   }
 
   return <div className="theme-employee"><EmployeeLayout user={session.user}>{children}</EmployeeLayout></div>

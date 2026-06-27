@@ -9,22 +9,31 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { bulkUpdateGrievanceStatus, bulkAssignGrievance } from "@/app/actions/grievance"
 import { toast } from "sonner"
-import { ArrowUpDown, Download, CheckCircle2, UserPlus, Filter, X } from "lucide-react"
+import { ArrowUpDown, Download, CheckCircle2, UserPlus, Filter, X, Search, MoreVertical, Eye, Edit, Trash2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useSearchParams } from "next/navigation"
 
 export default function HRCasesTableClient({ 
   grievances, 
   hrUsers,
-  categories 
+  categories,
+  currentUserId 
 }: { 
   grievances: any[],
   hrUsers: { id: string, name: string | null }[],
-  categories: any[]
+  categories: any[],
+  currentUserId: string
 }) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
+  const searchParams = useSearchParams()
+  const initialFilter = "ALL"
+  const [quickFilter, setQuickFilter] = useState(initialFilter)
+  
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 20
 
   // Filters
   const [filterSearch, setFilterSearch] = useState("")
@@ -44,6 +53,21 @@ export default function HRCasesTableClient({
   // Derived filtered & sorted data
   const processedGrievances = useMemo(() => {
     let result = grievances
+
+    // Quick filter
+    if (quickFilter === "TODAY") {
+      const today = new Date(); today.setHours(0,0,0,0);
+      result = result.filter(g => new Date(g.createdAt) >= today)
+    }
+    if (quickFilter === "THIS_WEEK") {
+      const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+      result = result.filter(g => new Date(g.createdAt) >= weekAgo)
+    }
+    if (quickFilter === "UNASSIGNED") result = result.filter(g => !g.assignedToId)
+    if (quickFilter === "NEAR_SLA") {
+      const now = new Date();
+      result = result.filter(g => g.slaDueDate && g.status !== "RESOLVED" && g.status !== "CLOSED" && g.status !== "REJECTED" && new Date(g.slaDueDate).getTime() - now.getTime() > 0 && new Date(g.slaDueDate).getTime() - now.getTime() <= 48 * 60 * 60 * 1000)
+    }
 
     // Apply filters
     if (filterSearch) {
@@ -88,7 +112,19 @@ export default function HRCasesTableClient({
     }
 
     return result
-  }, [grievances, filterSearch, filterStatus, filterPriority, filterCategory, filterAssignedTo, sortConfig])
+  }, [grievances, filterSearch, filterStatus, filterPriority, filterCategory, filterAssignedTo, sortConfig, quickFilter])
+
+  // Reset pagination on filter change
+  useMemo(() => {
+    setCurrentPage(1)
+  }, [filterSearch, filterStatus, filterPriority, filterCategory, filterAssignedTo, quickFilter])
+
+  const paginatedGrievances = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    return processedGrievances.slice(start, start + itemsPerPage)
+  }, [processedGrievances, currentPage])
+  
+  const totalPages = Math.ceil(processedGrievances.length / itemsPerPage)
 
 
   // Toggle selection
@@ -169,27 +205,50 @@ export default function HRCasesTableClient({
   }
 
   // Display Helpers
-  const getStatusColor = (status: string) => {
+  const getStatusBadge = (status: string) => {
+    let classes = "px-3 py-1 text-xs font-semibold rounded-full border border-transparent shadow-sm inline-block text-center min-w-[110px] "
     switch(status) {
-      case 'SUBMITTED': return 'bg-blue-600 text-white'
-      case 'UNDER_REVIEW': return 'bg-purple-600 text-white'
-      case 'INVESTIGATION': return 'bg-amber-500 text-white'
-      case 'ACTION_TAKEN': return 'bg-blue-700 text-white'
-      case 'RESOLVED': return 'bg-emerald-600 text-white'
-      case 'CLOSED': return 'bg-slate-700 text-white'
-      case 'REJECTED': return 'bg-red-600 text-white'
-      default: return 'bg-slate-600 text-white'
+      case 'SUBMITTED': classes += 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'; break;
+      case 'UNDER_REVIEW': classes += 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'; break;
+      case 'INVESTIGATION': classes += 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'; break;
+      case 'ACTION_TAKEN': classes += 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'; break;
+      case 'RESOLVED': classes += 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'; break;
+      case 'CLOSED': classes += 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'; break;
+      case 'REJECTED': classes += 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'; break;
+      default: classes += 'bg-slate-100 text-slate-700'; break;
+    }
+    return <div className={classes}>{status.replace('_', ' ')}</div>
+  }
+
+  const getPriorityDisplay = (priority: string) => {
+    switch(priority) {
+      case 'LOW': return <span className="text-emerald-600 font-medium flex items-center"><span className="mr-1 text-xs">🟢</span> Low</span>
+      case 'MEDIUM': return <span className="text-yellow-600 font-medium flex items-center"><span className="mr-1 text-xs">🟡</span> Medium</span>
+      case 'HIGH': return <span className="text-amber-600 font-medium flex items-center"><span className="mr-1 text-xs">🟠</span> High</span>
+      case 'CRITICAL': return <span className="text-red-600 font-bold flex items-center"><span className="mr-1 text-xs">🔴</span> Critical</span>
+      default: return <span className="text-slate-500">{priority}</span>
     }
   }
 
-  const getPriorityColor = (priority: string) => {
-    switch(priority) {
-      case 'LOW': return 'text-slate-500'
-      case 'MEDIUM': return 'text-blue-500'
-      case 'HIGH': return 'text-amber-500'
-      case 'CRITICAL': return 'text-red-500 font-bold'
-      default: return 'text-slate-500'
-    }
+  const formatSLA = (date: Date | null, status: string) => {
+    if (!date) return <span className="text-slate-400">N/A</span>
+    const isClosed = ['RESOLVED', 'CLOSED', 'REJECTED'].includes(status)
+    const formatted = new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+    if (isClosed) return <span className="text-slate-500">{formatted}</span>
+
+    const diff = new Date(date).getTime() - new Date().getTime()
+    const days = Math.floor(diff / (1000 * 3600 * 24))
+    
+    if (days < 0) return <div className="text-red-600 font-medium">❌ Overdue<br/><span className="text-xs">{Math.abs(days)} Days</span></div>
+    if (days === 0) return <div className="text-amber-600 font-medium">🟠 Tomorrow<br/><span className="text-xs">{formatted}</span></div>
+    if (days === 1) return <div className="text-amber-600 font-medium">🟠 Tomorrow<br/><span className="text-xs">{formatted}</span></div>
+    return <div className="text-emerald-600 font-medium">🟢 {days} Days<br/><span className="text-xs text-slate-500">{formatted}</span></div>
+  }
+  
+  const calculateAge = (date: Date) => {
+    const diff = new Date().getTime() - new Date(date).getTime()
+    const days = Math.floor(diff / (1000 * 3600 * 24))
+    return days === 0 ? "Today" : `${days} Days`
   }
 
   const getSlaBorderColor = (slaDate: Date | null, status: string) => {
@@ -205,16 +264,28 @@ export default function HRCasesTableClient({
 
   return (
     <div className="space-y-4">
+      {/* Quick Filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant={quickFilter === "ALL" ? "default" : "outline"} className={`cursor-pointer px-3 py-1.5 transition-colors border-slate-200 ${quickFilter === 'ALL' ? 'bg-slate-800 text-white hover:bg-slate-700' : 'text-slate-600 hover:bg-slate-100 bg-white'}`} onClick={() => setQuickFilter("ALL")}>All</Badge>
+        <Badge variant={quickFilter === "TODAY" ? "default" : "outline"} className={`cursor-pointer px-3 py-1.5 transition-colors border-blue-200 ${quickFilter === 'TODAY' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'text-blue-600 hover:bg-blue-50 bg-white'}`} onClick={() => setQuickFilter("TODAY")}>Today</Badge>
+        <Badge variant={quickFilter === "THIS_WEEK" ? "default" : "outline"} className={`cursor-pointer px-3 py-1.5 transition-colors border-blue-200 ${quickFilter === 'THIS_WEEK' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'text-blue-600 hover:bg-blue-50 bg-white'}`} onClick={() => setQuickFilter("THIS_WEEK")}>This Week</Badge>
+        <Badge variant={quickFilter === "UNASSIGNED" ? "default" : "outline"} className={`cursor-pointer px-3 py-1.5 transition-colors border-slate-300 ${quickFilter === 'UNASSIGNED' ? 'bg-slate-700 text-white hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-50 bg-white'}`} onClick={() => setQuickFilter("UNASSIGNED")}>Unassigned</Badge>
+        <Badge variant={quickFilter === "NEAR_SLA" ? "default" : "outline"} className={`cursor-pointer px-3 py-1.5 transition-colors border-amber-200 ${quickFilter === 'NEAR_SLA' ? 'bg-amber-600 text-white hover:bg-amber-700' : 'text-amber-600 hover:bg-amber-50 bg-white'}`} onClick={() => setQuickFilter("NEAR_SLA")}>Near SLA</Badge>
+      </div>
+
       {/* Advanced Filters */}
       <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row flex-wrap gap-4 items-end">
         <div className="space-y-1 flex-1 min-w-[200px]">
           <label className="text-xs font-semibold text-slate-500">Search</label>
-          <Input 
-            placeholder="Ticket ID, Subject, Employee..." 
-            value={filterSearch} 
-            onChange={(e) => setFilterSearch(e.target.value)}
-            className="h-9"
-          />
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2 h-4 w-4 text-slate-400" />
+            <Input 
+              placeholder="🔍 Search Ticket ID, Subject, Employee..." 
+              value={filterSearch} 
+              onChange={(e) => setFilterSearch(e.target.value)}
+              className="h-9 pl-9"
+            />
+          </div>
         </div>
         
         <div className="space-y-1 w-full sm:w-[150px]">
@@ -278,6 +349,14 @@ export default function HRCasesTableClient({
         </Button>
       </div>
 
+      {/* Filter Summary */}
+      <div className="text-sm text-slate-500 font-medium">
+        Showing <span className="text-slate-900 dark:text-white font-bold">{processedGrievances.length}</span> Cases
+        {filterStatus !== "ALL" && ` • Status: ${filterStatus.replace('_', ' ')}`}
+        {filterPriority !== "ALL" && ` • Priority: ${filterPriority}`}
+        {filterCategory !== "ALL" && ` • Category: Filtered`}
+      </div>
+
       {/* Bulk Action Toolbar */}
       {selectedIds.size > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-4 animate-in slide-in-from-bottom-5">
@@ -299,19 +378,18 @@ export default function HRCasesTableClient({
           <DropdownMenu>
             <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md text-xs font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border bg-slate-800 border-slate-700 hover:bg-slate-700 hover:text-white h-8 px-3" disabled={isUpdating}>
               <CheckCircle2 className="h-3 w-3 mr-2" />
-              Status
+              Change Status
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem onClick={() => handleBulkStatusUpdate('UNDER_REVIEW')}>Under Review</DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleBulkStatusUpdate('INVESTIGATION')}>Investigation</DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleBulkStatusUpdate('RESOLVED')}>Resolved</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleBulkStatusUpdate('CLOSED')}>Closed</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button size="sm" variant="outline" onClick={handleExportCSV} className="bg-slate-800 border-slate-700 hover:bg-slate-700 hover:text-white h-8 text-xs">
-            <Download className="h-3 w-3 mr-2" />
-            Export CSV
+          <Button size="sm" variant="outline" onClick={() => handleBulkStatusUpdate('CLOSED')} className="bg-slate-800 border-slate-700 hover:bg-slate-700 hover:text-white h-8 text-xs font-medium" disabled={isUpdating}>
+            <CheckCircle2 className="h-4 w-4 mr-2 text-emerald-500" />
+            Mark Closed
           </Button>
         </div>
       )}
@@ -343,41 +421,55 @@ export default function HRCasesTableClient({
                   </Button>
                 </TableHead>
                 <TableHead>Assigned To</TableHead>
-                <TableHead>
-                  <Button variant="ghost" onClick={() => requestSort('date')} className="h-8 p-0 hover:bg-transparent font-medium flex items-center">
+                <TableHead className="text-right">Age</TableHead>
+                <TableHead className="text-right">Last Updated</TableHead>
+                <TableHead className="text-right">
+                  <Button variant="ghost" onClick={() => requestSort('date')} className="h-8 p-0 hover:bg-transparent font-medium inline-flex items-center">
                     Submitted <ArrowUpDown className="ml-2 h-3 w-3" />
                   </Button>
                 </TableHead>
-                <TableHead>
-                  <Button variant="ghost" onClick={() => requestSort('sla')} className="h-8 p-0 hover:bg-transparent font-medium flex items-center text-right">
+                <TableHead className="text-right">
+                  <Button variant="ghost" onClick={() => requestSort('sla')} className="h-8 p-0 hover:bg-transparent font-medium inline-flex items-center">
                     SLA Due <ArrowUpDown className="ml-2 h-3 w-3" />
                   </Button>
                 </TableHead>
+                <TableHead className="text-right pr-4">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {processedGrievances.map((g) => (
-                <TableRow key={g.id} className={`h-10 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border-l-4 ${getSlaBorderColor(g.slaDueDate, g.status)}`}>
+              {paginatedGrievances.map((g) => (
+                <TableRow key={g.id} className={`h-[60px] cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors border-l-4 ${getSlaBorderColor(g.slaDueDate, g.status)}`}>
                   <TableCell className="pl-4">
                     <Checkbox checked={selectedIds.has(g.id)} onCheckedChange={() => toggleSelect(g.id)} />
                   </TableCell>
                   <TableCell className="font-medium text-slate-800 dark:text-slate-200">
                     <Link href={`/grievances/${g.id}`} className="hover:underline text-indigo-600">{g.ticketNumber}</Link>
                   </TableCell>
-                  <TableCell className="max-w-[150px] truncate">{g.subject}</TableCell>
-                  <TableCell>{g.category?.name || "None"}</TableCell>
-                  <TableCell>
-                    {g.isAnonymous ? <span className="italic text-slate-500">Anonymous</span> : g.employee?.name || "Unknown"}
+                  <TableCell className="max-w-[180px]" title={g.subject}>
+                    <div className="font-medium truncate">{g.subject}</div>
                   </TableCell>
-                  <TableCell className={getPriorityColor(g.priority)}>
-                    {g.priority}
+                  <TableCell>
+                    <Badge variant="outline" className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-medium rounded-full">
+                      {g.category?.name || "None"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {g.isAnonymous ? (
+                      <span className="text-slate-500 font-medium">👤 Anonymous</span>
+                    ) : (
+                      <div className="flex flex-col">
+                        <span className="font-medium">{g.employee?.name || "Unknown"}</span>
+                        <span className="text-xs text-slate-500">{g.employee?.employeeIdStr || "No ID"}</span>
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {getPriorityDisplay(g.priority)}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
-                      <DropdownMenuTrigger className="focus:outline-none">
-                        <Badge variant="outline" className={`${getStatusColor(g.status)} border-none cursor-pointer hover:opacity-80`}>
-                          {g.status.replace('_', ' ')}
-                        </Badge>
+                      <DropdownMenuTrigger className="focus:outline-none hover:opacity-80 transition-opacity">
+                        {getStatusBadge(g.status)}
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
                         <DropdownMenuItem onClick={() => {
@@ -418,18 +510,46 @@ export default function HRCasesTableClient({
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
-                  <TableCell className="text-slate-500 text-xs whitespace-nowrap">
-                    {new Date(g.createdAt).toLocaleDateString()}
+                  <TableCell className="text-right whitespace-nowrap font-medium text-slate-700 dark:text-slate-300">
+                    {calculateAge(g.createdAt)}
+                  </TableCell>
+                  <TableCell className="text-right whitespace-nowrap">
+                    <div className="text-slate-900 dark:text-slate-300 font-medium">
+                      {new Date(g.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {new Date(g.updatedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
                   </TableCell>
                   <TableCell className="text-slate-500 text-xs whitespace-nowrap text-right">
-                    {g.slaDueDate ? new Date(g.slaDueDate).toLocaleDateString() : "N/A"}
+                    {new Date(g.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </TableCell>
+                  <TableCell className="text-right whitespace-nowrap">
+                    {formatSLA(g.slaDueDate, g.status)}
+                  </TableCell>
+                  <TableCell className="text-right pr-4">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors focus:outline-none">
+                        <MoreVertical className="h-4 w-4 text-slate-500" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <Link href={`/grievances/${g.id}`}><DropdownMenuItem><Eye className="mr-2 h-4 w-4" /> View Case</DropdownMenuItem></Link>
+                        <DropdownMenuItem><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
               {processedGrievances.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-12 text-slate-500">
-                    No cases match the selected filters.
+                  <TableCell colSpan={10} className="text-center py-16">
+                    <div className="flex flex-col items-center justify-center space-y-3">
+                      <div className="text-4xl">🎉</div>
+                      <h3 className="text-lg font-medium text-slate-900 dark:text-white">No Cases Found</h3>
+                      <p className="text-slate-500">You're all caught up! No cases match your current filters.</p>
+                      <Button variant="outline" onClick={clearFilters} className="mt-2 h-8 text-xs">Clear Filters</Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               )}
@@ -437,6 +557,44 @@ export default function HRCasesTableClient({
           </Table>
         </div>
       </div>
+
+      {/* Pagination Footer */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-2 pt-2">
+          <div className="text-sm text-slate-500">
+            Showing {(currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, processedGrievances.length)} of {processedGrievances.length}
+          </div>
+          <div className="flex gap-1">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            >
+              &lt; Previous
+            </Button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "ghost"}
+                size="sm"
+                className="w-9"
+                onClick={() => setCurrentPage(page)}
+              >
+                {page}
+              </Button>
+            ))}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            >
+              Next &gt;
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
