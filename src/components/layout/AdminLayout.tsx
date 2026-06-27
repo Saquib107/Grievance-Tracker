@@ -3,9 +3,9 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
-import { ShieldAlert, LayoutDashboard, LogOut, Users, MapPin, Inbox, PieChart, FileText, Settings, ClipboardList, UserCog, Bell, ChevronDown, User } from "lucide-react"
+import { ShieldAlert, LayoutDashboard, LogOut, Users, MapPin, Inbox, PieChart, FileText, Settings, ClipboardList, UserCog, Bell, ChevronDown, User, Search, Clock, ChevronRight } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 export default function AdminLayout({ user, children }: { user: any, children: React.ReactNode }) {
   const pathname = usePathname()
@@ -20,13 +20,23 @@ export default function AdminLayout({ user, children }: { user: any, children: R
     { href: "/admin/analytics", label: "Analytics", icon: PieChart },
   ]
 
-  const settingsLinks = [
-    { href: "/admin/audit-logs", label: "Audit Logs", icon: ClipboardList },
-    { href: "/admin/system-users", label: "System Users", icon: UserCog },
-    { href: "/admin/settings", label: "Settings", icon: Settings },
-  ]
+
 
   const lastSyncTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+
+  const getBreadcrumb = () => {
+    if (pathname === "/admin") return "Dashboard"
+    if (pathname.includes("/admin/users")) return "HR Management"
+    if (pathname.includes("/admin/employees")) return "Employee Management"
+    if (pathname.includes("/admin/sites")) return "Site Management"
+    if (pathname.includes("/admin/cases")) return "Case Management"
+    if (pathname.includes("/admin/reports")) return "Reports"
+    if (pathname.includes("/admin/analytics")) return "Analytics"
+    if (pathname.includes("/admin/settings")) return "Settings"
+    if (pathname.includes("/admin/audit-logs")) return "Audit Logs"
+    if (pathname.includes("/admin/system-users")) return "System Users"
+    return "Dashboard"
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
@@ -44,7 +54,9 @@ export default function AdminLayout({ user, children }: { user: any, children: R
           <nav className="space-y-1 mb-8">
             {links.map((link) => {
               const Icon = link.icon
-              const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`)
+              const isActive = link.href === "/admin" 
+                ? pathname === "/admin" 
+                : (pathname === link.href || pathname.startsWith(`${link.href}/`))
               return (
                 <Link
                   key={link.href}
@@ -52,39 +64,16 @@ export default function AdminLayout({ user, children }: { user: any, children: R
                   className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                     isActive
                       ? "bg-indigo-600 text-white"
-                      : "hover:bg-slate-800 hover:text-white"
+                      : "text-slate-400"
                   }`}
                 >
-                  <Icon className={`mr-3 h-5 w-5 flex-shrink-0 ${isActive ? "text-indigo-200" : "text-slate-400"}`} />
+                  <Icon className={`mr-3 h-5 w-5 flex-shrink-0 ${isActive ? "text-indigo-200" : "text-slate-500"}`} />
                   {link.label}
                 </Link>
               )
             })}
           </nav>
 
-          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4 px-3">
-            System
-          </div>
-          <nav className="space-y-1">
-            {settingsLinks.map((link) => {
-              const Icon = link.icon
-              const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`)
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    isActive
-                      ? "bg-indigo-600 text-white"
-                      : "hover:bg-slate-800 hover:text-white"
-                  }`}
-                >
-                  <Icon className={`mr-3 h-5 w-5 flex-shrink-0 ${isActive ? "text-indigo-200" : "text-slate-400"}`} />
-                  {link.label}
-                </Link>
-              )
-            })}
-          </nav>
         </div>
 
         {/* User Profile Footer */}
@@ -104,17 +93,6 @@ export default function AdminLayout({ user, children }: { user: any, children: R
                 <ChevronDown className="h-4 w-4 text-slate-400" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-[#111827] text-white border-slate-800">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-slate-800" />
-              <DropdownMenuItem className="focus:bg-slate-800 focus:text-white cursor-pointer">
-                <User className="mr-2 h-4 w-4" />
-                <span>My Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="focus:bg-slate-800 focus:text-white cursor-pointer">
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-slate-800" />
               <DropdownMenuItem 
                 className="focus:bg-slate-800 focus:text-white text-red-400 focus:text-red-400 cursor-pointer"
                 onClick={() => signOut({ callbackUrl: "/login" })}
@@ -135,32 +113,86 @@ export default function AdminLayout({ user, children }: { user: any, children: R
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header */}
-        <header className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+        <header className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
           <div className="md:hidden flex items-center font-bold text-xl text-slate-900 dark:text-white">
             <ShieldAlert className="h-6 w-6 mr-2 text-indigo-600 dark:text-indigo-400" />
             GrievanceHub
           </div>
           
           <div className="hidden md:flex flex-1 items-center justify-between">
-            <div className="flex-1" />
-            <div className="flex items-center gap-4">
+            {/* Left side: Breadcrumb */}
+            <div className="flex items-center text-sm font-medium text-slate-500 w-1/4">
+              <Link href="/admin" className="hover:text-slate-900 dark:hover:text-slate-200 transition-colors">Dashboard</Link>
+              {pathname !== "/admin" && (
+                <>
+                  <ChevronRight className="h-4 w-4 mx-1.5 text-slate-400" />
+                  <span className="text-slate-900 dark:text-slate-100">{getBreadcrumb()}</span>
+                </>
+              )}
+            </div>
+
+            {/* Middle: Global Search */}
+            <div className="flex-1 max-w-xl px-4 relative group">
+              <div className="absolute inset-y-0 left-7 flex items-center pointer-events-none">
+                <Search className="h-4 w-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search Cases, Employees, HR, Sites..."
+                className="block w-full pl-10 pr-12 py-2 border border-slate-200 dark:border-slate-700 rounded-full leading-5 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all"
+              />
+              <div className="absolute inset-y-0 right-7 flex items-center pointer-events-none">
+                <span className="text-[10px] font-medium text-slate-400 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5">⌘K</span>
+              </div>
+            </div>
+
+            {/* Right side: Last Updated, Notifications */}
+            <div className="flex items-center justify-end gap-3 w-1/4">
+              <div className="hidden lg:flex items-center text-xs font-medium text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full whitespace-nowrap">
+                <Clock className="h-3.5 w-3.5 mr-1.5" />
+                Updated {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+
               <DropdownMenu>
-                <DropdownMenuTrigger className="relative p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                <DropdownMenuTrigger className="relative p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors outline-none focus:ring-2 focus:ring-indigo-500">
                     <Bell className="h-5 w-5" />
-                    <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500"></span>
+                    <span className="absolute top-1 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900"></span>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-80">
-                  <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel className="flex justify-between items-center">
+                      Notifications
+                      <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">4 New</span>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <div className="flex flex-col max-h-[320px] overflow-y-auto">
+                      <div className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer border-l-2 border-indigo-500 transition-colors">
+                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">New Complaint</p>
+                        <p className="text-xs text-slate-500 mt-1">Ticket #EMP-1042 needs to be assigned.</p>
+                        <p className="text-xs text-indigo-600 mt-1 font-medium">Just now</p>
+                      </div>
+                      <div className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer border-l-2 border-amber-500 transition-colors">
+                        <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">HR Assigned</p>
+                        <p className="text-xs text-slate-500 mt-1">Shaheen Parween assigned to Case #EMP-0991.</p>
+                        <p className="text-xs text-slate-400 mt-1 font-medium">10 mins ago</p>
+                      </div>
+                      <div className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer border-l-2 border-transparent transition-colors">
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Employee Added</p>
+                        <p className="text-xs text-slate-500 mt-1">Rahul Sharma (EMP0023) joined IT Department.</p>
+                        <p className="text-xs text-slate-400 mt-1 font-medium">1 hour ago</p>
+                      </div>
+                      <div className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer border-l-2 border-emerald-500 transition-colors">
+                        <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Report Generated</p>
+                        <p className="text-xs text-slate-500 mt-1">Monthly SLA Report is ready for download.</p>
+                        <p className="text-xs text-slate-400 mt-1 font-medium">Yesterday</p>
+                      </div>
+                    </div>
+                  </DropdownMenuGroup>
                   <DropdownMenuSeparator />
-                  <div className="flex flex-col gap-1 p-2">
-                    <div className="px-2 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md cursor-pointer">
-                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">3 New Complaints</p>
-                      <p className="text-xs text-slate-500">Just now</p>
-                    </div>
-                    <div className="px-2 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md cursor-pointer">
-                      <p className="text-sm font-medium text-red-600 dark:text-red-400">2 SLA Violations</p>
-                      <p className="text-xs text-slate-500">1 hour ago</p>
-                    </div>
+                  <div className="p-1 text-center">
+                    <button className="text-xs font-medium text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-md w-full p-2 transition-colors">
+                      View All Notifications
+                    </button>
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>
