@@ -1,94 +1,201 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
+import { useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { AlertCircle, CheckCircle2, Clock, FileText } from "lucide-react"
+import Link from "next/link"
 
+// Mock Data
 const monthlyData = [
-  { name: 'Jan', total: 12, resolved: 10 },
-  { name: 'Feb', total: 19, resolved: 15 },
-  { name: 'Mar', total: 15, resolved: 13 },
-  { name: 'Apr', total: 22, resolved: 18 },
-  { name: 'May', total: 30, resolved: 22 },
-  { name: 'Jun', total: 25, resolved: 10 }, // Current month, many pending
+  { name: 'Jan', total: 12, resolved: 10, pending: 2 },
+  { name: 'Feb', total: 19, resolved: 15, pending: 4 },
+  { name: 'Mar', total: 15, resolved: 13, pending: 2 },
+  { name: 'Apr', total: 22, resolved: 18, pending: 4 },
+  { name: 'May', total: 30, resolved: 22, pending: 8 },
+  { name: 'Jun', total: 25, resolved: 10, pending: 15 },
 ]
 
-const siteData = [
-  { name: 'Site A (BSP)', value: 45 },
-  { name: 'Site B (Noida)', value: 25 },
-  { name: 'Site C (Pune)', value: 30 },
+const priorityData = [
+  { name: 'Critical', value: 12 },
+  { name: 'High', value: 25 },
+  { name: 'Medium', value: 45 },
+  { name: 'Low', value: 18 }
+]
+const priorityColors = ['#ef4444', '#f97316', '#eab308', '#3b82f6']
+
+const statusData = [
+  { name: 'Open', value: 30 },
+  { name: 'Investigating', value: 20 },
+  { name: 'Resolved', value: 40 },
+  { name: 'Closed', value: 10 }
+]
+const statusColors = ['#f59e0b', '#a855f7', '#10b981', '#64748b']
+
+const slaTrendData = [
+  { name: 'Jan', compliance: 98 },
+  { name: 'Feb', compliance: 96 },
+  { name: 'Mar', compliance: 93 },
+  { name: 'Apr', compliance: 91 },
+  { name: 'May', compliance: 94 },
+  { name: 'Jun', compliance: 89 },
 ]
 
-const COLORS = ['#4f46e5', '#0ea5e9', '#f59e0b', '#ef4444']
+const resolutionTimeData = [
+  { name: 'Jan', days: 2.1 },
+  { name: 'Feb', days: 2.5 },
+  { name: 'Mar', days: 2.8 },
+  { name: 'Apr', days: 3.2 },
+  { name: 'May', days: 2.9 },
+  { name: 'Jun', days: 4.1 },
+]
+
+const deptData = [
+  { name: 'Payroll', cases: 35 },
+  { name: 'HR', cases: 20 },
+  { name: 'Safety', cases: 10 },
+  { name: 'IT', cases: 8 },
+  { name: 'Facilities', cases: 5 },
+]
+const COLORS = ['#4f46e5', '#0ea5e9', '#f59e0b', '#ef4444', '#8b5cf6']
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-lg shadow-lg">
+        <p className="font-semibold text-slate-900 dark:text-white mb-2">{label}</p>
+        {payload.map((entry: any, index: number) => (
+          <div key={index} className="flex items-center text-sm mb-1">
+            <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: entry.color }}></span>
+            <span className="text-slate-600 dark:text-slate-300 mr-4">{entry.name}:</span>
+            <span className="font-medium text-slate-900 dark:text-white">
+              {entry.value} {entry.name === 'compliance' ? '%' : (entry.name === 'days' ? 'Days' : 'Cases')}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+}
 
 export default function AnalyticsDashboard({ stats }: { stats: any }) {
+  const [dateRange, setDateRange] = useState("year")
+  const [site, setSite] = useState("all")
+  const [category, setCategory] = useState("all")
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Analytics Dashboard</h2>
-        <p className="text-slate-500 mt-1">Live metrics and SLA tracking across all sites.</p>
+    <div className="space-y-6 max-w-7xl mx-auto pb-10">
+      
+      {/* Header and Filters */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Analytics Dashboard</h2>
+          <p className="text-sm text-slate-500 mt-1">Real-time business intelligence and performance metrics.</p>
+        </div>
+        
+        <div className="flex flex-wrap gap-3">
+          <Select value={dateRange} onValueChange={(val) => setDateRange(val || "")}>
+            <SelectTrigger className="w-[140px] h-9 text-xs font-medium"><SelectValue placeholder="Date Range" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7days">Last 7 Days</SelectItem>
+              <SelectItem value="month">Last Month</SelectItem>
+              <SelectItem value="year">Current Year</SelectItem>
+              <SelectItem value="all">All Time</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Select value={site} onValueChange={(val) => setSite(val || "")}>
+            <SelectTrigger className="w-[140px] h-9 text-xs font-medium"><SelectValue placeholder="Site" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Sites</SelectItem>
+              <SelectItem value="bsp">BSP Bhilai</SelectItem>
+              <SelectItem value="noida">Noida HO</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={category} onValueChange={(val) => setCategory(val || "")}>
+            <SelectTrigger className="w-[140px] h-9 text-xs font-medium"><SelectValue placeholder="Category" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="payroll">Payroll</SelectItem>
+              <SelectItem value="harassment">Harassment</SelectItem>
+              <SelectItem value="safety">Safety</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards (Drill-Down Links) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-l-4 border-l-blue-500 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Total Grievances</CardTitle>
-            <FileText className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-slate-900 dark:text-white">{stats.total}</div>
-            <p className="text-xs text-slate-500 mt-1">+12% from last month</p>
-          </CardContent>
-        </Card>
+        <Link href="/admin/cases" className="block">
+          <Card className="border-l-4 border-l-blue-500 card-hover cursor-pointer h-full">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-slate-500">Total Grievances</CardTitle>
+              <FileText className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-slate-900 dark:text-white hover:text-blue-600 transition-colors">{stats.total}</div>
+              <p className="text-xs text-slate-500 mt-1">↑ 12% from last month</p>
+            </CardContent>
+          </Card>
+        </Link>
         
-        <Card className="border-l-4 border-l-amber-500 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Pending / In Progress</CardTitle>
-            <Clock className="h-4 w-4 text-amber-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-slate-900 dark:text-white">{stats.pending}</div>
-            <p className="text-xs text-amber-600 mt-1">Requires attention</p>
-          </CardContent>
-        </Card>
+        <Link href="/admin/cases?status=IN_PROGRESS" className="block">
+          <Card className="border-l-4 border-l-amber-500 card-hover cursor-pointer h-full">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-slate-500">Pending / In Progress</CardTitle>
+              <Clock className="h-4 w-4 text-amber-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-slate-900 dark:text-white hover:text-amber-600 transition-colors">{stats.pending}</div>
+              <p className="text-xs text-amber-600 mt-1 font-medium">Requires attention</p>
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card className="border-l-4 border-l-emerald-500 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Resolved Cases</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-slate-900 dark:text-white">{stats.resolved}</div>
-            <p className="text-xs text-emerald-600 mt-1">85% Resolution Rate</p>
-          </CardContent>
-        </Card>
+        <Link href="/admin/cases?status=RESOLVED" className="block">
+          <Card className="border-l-4 border-l-emerald-500 card-hover cursor-pointer h-full">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-slate-500">Resolved Cases</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-slate-900 dark:text-white hover:text-emerald-600 transition-colors">{stats.resolved}</div>
+              <p className="text-xs text-emerald-600 mt-1 font-medium">85% Resolution Rate</p>
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card className="border-l-4 border-l-red-500 shadow-sm bg-red-50/50 dark:bg-red-950/20">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-bold text-red-600">SLA Overdue</CardTitle>
-            <AlertCircle className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-black text-red-600">{stats.overdue}</div>
-            <p className="text-xs text-red-500 mt-1 font-semibold">Breached timeframe</p>
-          </CardContent>
-        </Card>
+        <Link href="/admin/cases?status=OVERDUE" className="block">
+          <Card className="border-l-4 border-l-red-500 card-hover cursor-pointer h-full bg-red-50/30 dark:bg-red-950/20">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-bold text-red-600">SLA Overdue</CardTitle>
+              <AlertCircle className="h-4 w-4 text-red-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-black text-red-600 hover:text-red-700 transition-colors">{stats.overdue}</div>
+              <p className="text-xs text-red-500 mt-1 font-semibold">Immediate action needed</p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Monthly Trends */}
-        <Card className="shadow-sm">
+        <Card className="card-hover">
           <CardHeader>
-            <CardTitle className="text-lg">Monthly Trends</CardTitle>
+            <CardTitle className="text-lg text-slate-800 dark:text-slate-100">Monthly Trend</CardTitle>
+            <CardDescription>Volume of grievances filed vs resolved.</CardDescription>
           </CardHeader>
           <CardContent className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+              <BarChart data={monthlyData} margin={{ top: 20, right: 30, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} />
-                <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
+                <RechartsTooltip content={<CustomTooltip />} cursor={{fill: '#f1f5f9', opacity: 0.4}} />
                 <Bar dataKey="total" name="Total Filed" fill="#94a3b8" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="resolved" name="Resolved" fill="#4f46e5" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -96,41 +203,135 @@ export default function AnalyticsDashboard({ stats }: { stats: any }) {
           </CardContent>
         </Card>
 
-        {/* Site Wise Breakdown */}
-        <Card className="shadow-sm">
+        {/* SLA Trend */}
+        <Card className="card-hover">
           <CardHeader>
-            <CardTitle className="text-lg">Cases by Site Location</CardTitle>
+            <CardTitle className="text-lg text-slate-800 dark:text-slate-100">Monthly SLA Compliance</CardTitle>
+            <CardDescription>Percentage of cases resolved within SLA deadline.</CardDescription>
           </CardHeader>
-          <CardContent className="h-80 flex items-center justify-center">
+          <CardContent className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={siteData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={80}
-                  outerRadius={110}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {siteData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-              </PieChart>
+              <LineChart data={slaTrendData} margin={{ top: 20, right: 30, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
+                <YAxis domain={[80, 100]} axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
+                <RechartsTooltip content={<CustomTooltip />} />
+                <Line type="monotone" dataKey="compliance" name="compliance" stroke="#10b981" strokeWidth={3} dot={{r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff'}} activeDot={{r: 6}} />
+              </LineChart>
             </ResponsiveContainer>
-            {/* Custom Legend */}
-            <div className="absolute bottom-6 flex space-x-4 text-sm">
-              {siteData.map((entry, index) => (
-                <div key={entry.name} className="flex items-center">
-                  <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
-                  <span className="text-slate-600">{entry.name}</span>
-                </div>
-              ))}
-            </div>
           </CardContent>
         </Card>
+
+        {/* Department Analysis */}
+        <Card className="card-hover">
+          <CardHeader>
+            <CardTitle className="text-lg text-slate-800 dark:text-slate-100">Department Analysis</CardTitle>
+            <CardDescription>Grievance volume by employee department.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart layout="vertical" data={deptData} margin={{ top: 20, right: 30, left: 20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
+                <XAxis type="number" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
+                <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
+                <RechartsTooltip content={<CustomTooltip />} cursor={{fill: '#f1f5f9', opacity: 0.4}} />
+                <Bar dataKey="cases" name="Cases" fill="#0ea5e9" radius={[0, 4, 4, 0]} barSize={24} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Resolution Time */}
+        <Card className="card-hover">
+          <CardHeader>
+            <CardTitle className="text-lg text-slate-800 dark:text-slate-100">Average Resolution Time</CardTitle>
+            <CardDescription>Average days taken to resolve a grievance.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={resolutionTimeData} margin={{ top: 20, right: 30, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
+                <YAxis domain={[0, 5]} axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
+                <RechartsTooltip content={<CustomTooltip />} />
+                <Line type="monotone" dataKey="days" name="days" stroke="#f59e0b" strokeWidth={3} dot={{r: 4, fill: '#f59e0b', strokeWidth: 2, stroke: '#fff'}} activeDot={{r: 6}} />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Priority & Status Breakdown */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:col-span-2">
+          {/* Status Distribution */}
+          <Card className="card-hover">
+            <CardHeader>
+              <CardTitle className="text-lg text-slate-800 dark:text-slate-100">Status Distribution</CardTitle>
+            </CardHeader>
+            <CardContent className="h-64 flex items-center justify-center relative">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={statusData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {statusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={statusColors[index % statusColors.length]} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip content={<CustomTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col space-y-2 text-sm">
+                {statusData.map((entry, index) => (
+                  <div key={entry.name} className="flex items-center">
+                    <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: statusColors[index % statusColors.length] }}></div>
+                    <span className="text-slate-600 dark:text-slate-400 font-medium">{entry.name}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Priority Distribution */}
+          <Card className="card-hover">
+            <CardHeader>
+              <CardTitle className="text-lg text-slate-800 dark:text-slate-100">Priority Distribution</CardTitle>
+            </CardHeader>
+            <CardContent className="h-64 flex items-center justify-center relative">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={priorityData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={0}
+                    outerRadius={90}
+                    dataKey="value"
+                  >
+                    {priorityData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={priorityColors[index % priorityColors.length]} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip content={<CustomTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col space-y-2 text-sm">
+                {priorityData.map((entry, index) => (
+                  <div key={entry.name} className="flex items-center">
+                    <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: priorityColors[index % priorityColors.length] }}></div>
+                    <span className="text-slate-600 dark:text-slate-400 font-medium">{entry.name}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
       </div>
     </div>
   )
