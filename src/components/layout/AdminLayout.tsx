@@ -131,20 +131,7 @@ export default function AdminLayout({ user, children }: { user: any, children: R
               )}
             </div>
 
-            {/* Middle: Global Search */}
-            <div className="flex-1 max-w-xl px-4 relative group">
-              <div className="absolute inset-y-0 left-7 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search Cases, Employees, HR, Sites..."
-                className="block w-full pl-10 pr-12 py-2 border border-slate-200 dark:border-slate-700 rounded-full leading-5 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all"
-              />
-              <div className="absolute inset-y-0 right-7 flex items-center pointer-events-none">
-                <span className="text-[10px] font-medium text-slate-400 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5">⌘K</span>
-              </div>
-            </div>
+            {/* Middle: Global Search Removed */}
 
             {/* Right side: Last Updated, Notifications */}
             <div className="flex items-center justify-end gap-3 w-1/4">
@@ -164,7 +151,8 @@ export default function AdminLayout({ user, children }: { user: any, children: R
                       Notifications
                       <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">4 New</span>
                     </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
                     <div className="flex flex-col max-h-[320px] overflow-y-auto">
                       <div className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer border-l-2 border-indigo-500 transition-colors">
                         <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">New Complaint</p>
@@ -187,7 +175,6 @@ export default function AdminLayout({ user, children }: { user: any, children: R
                         <p className="text-xs text-slate-400 mt-1 font-medium">Yesterday</p>
                       </div>
                     </div>
-                  </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <div className="p-1 text-center">
                     <button className="text-xs font-medium text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-md w-full p-2 transition-colors">
