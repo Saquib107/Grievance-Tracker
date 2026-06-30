@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Grievance Tracker',
   webDir: 'public',
   server: {
-    url: 'https://pgepl-grievance.vercel.app',
+    url: 'https://grievance-tracker-eight.vercel.app/',
     cleartext: true
   }
 };
