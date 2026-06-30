@@ -4,7 +4,10 @@ import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import AdminDashboardClient from "./AdminDashboardClient"
 
-export default async function AdminOverviewPage() {
+export default async function AdminOverviewPage(props: {
+  searchParams: Promise<{ site?: string, dateRange?: string, department?: string }>
+}) {
+  const searchParams = await props.searchParams;
   const session = await getServerSession(authOptions)
   
   if (!session || session.user.role !== "ADMIN") {
@@ -15,6 +18,24 @@ export default async function AdminOverviewPage() {
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+
+  // Parse filters
+  const siteFilter = searchParams.site && searchParams.site !== "all" ? searchParams.site : undefined;
+  const deptFilter = searchParams.department && searchParams.department !== "all" ? searchParams.department : undefined;
+  let dateFilter = undefined;
+  if (searchParams.dateRange === '7days') dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  else if (searchParams.dateRange === 'month') dateFilter = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+  else if (searchParams.dateRange === 'year') dateFilter = new Date(now.getFullYear(), 0, 1);
+  else if (searchParams.dateRange === 'thisQuarter') {
+    const q = Math.floor(now.getMonth() / 3);
+    dateFilter = new Date(now.getFullYear(), q * 3, 1);
+  }
+
+  // Base where clause for grievances
+  const baseWhere: any = {};
+  if (siteFilter) baseWhere.siteId = siteFilter;
+  if (deptFilter) baseWhere.department = deptFilter;
+  if (dateFilter) baseWhere.createdAt = { gte: dateFilter };
 
   // Run all DB queries concurrently to fix waterfall performance issue
   const [
@@ -33,24 +54,26 @@ export default async function AdminOverviewPage() {
     grievancesThisMonth,
     grievancesLastMonth,
     grievances,
-    recentLogs
+    recentLogs,
+    availableSites
   ] = await Promise.all([
-    prisma.grievance.count(),
-    prisma.grievance.count({ where: { status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] } } }),
-    prisma.grievance.count({ where: { status: { in: ["RESOLVED", "CLOSED"] } } }),
-    prisma.grievance.count({ where: { status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] }, slaDueDate: { lt: now } } }),
+    prisma.grievance.count({ where: baseWhere }),
+    prisma.grievance.count({ where: { ...baseWhere, status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] } } }),
+    prisma.grievance.count({ where: { ...baseWhere, status: { in: ["RESOLVED", "CLOSED"] } } }),
+    prisma.grievance.count({ where: { ...baseWhere, status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] }, slaDueDate: { lt: now } } }),
     prisma.user.count({ where: { role: "EMPLOYEE" } }),
     prisma.user.count({ where: { role: { in: ["HR", "ADMIN"] } } }),
     prisma.site.count(),
-    prisma.grievance.count({ where: { createdAt: { gte: todayStart } } }),
-    prisma.grievance.count({ where: { priority: { in: ["HIGH", "CRITICAL"] }, status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] } } }),
-    prisma.grievance.count({ where: { isAnonymous: true } }),
-    prisma.grievance.count({ where: { escalationLevel: { gt: 0 }, status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] } } }),
-    prisma.grievance.findMany({ where: { status: { in: ["RESOLVED", "CLOSED"] }, dateResolved: { not: null } }, select: { createdAt: true, dateResolved: true } }),
-    prisma.grievance.count({ where: { createdAt: { gte: startOfThisMonth } } }),
-    prisma.grievance.count({ where: { createdAt: { gte: startOfLastMonth, lt: startOfThisMonth } } }),
-    prisma.grievance.findMany({ select: { createdAt: true, status: true, priority: true, category: { select: { name: true } }, site: { select: { name: true } } } }),
-    prisma.grievanceLog.findMany({ orderBy: { createdAt: 'desc' }, take: 5, include: { grievance: { select: { ticketNumber: true } } } })
+    prisma.grievance.count({ where: { ...baseWhere, createdAt: { gte: todayStart } } }),
+    prisma.grievance.count({ where: { ...baseWhere, priority: { in: ["HIGH", "CRITICAL"] }, status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] } } }),
+    prisma.grievance.count({ where: { ...baseWhere, isAnonymous: true } }),
+    prisma.grievance.count({ where: { ...baseWhere, escalationLevel: { gt: 0 }, status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] } } }),
+    prisma.grievance.findMany({ where: { ...baseWhere, status: { in: ["RESOLVED", "CLOSED"] }, dateResolved: { not: null } }, select: { createdAt: true, dateResolved: true } }),
+    prisma.grievance.count({ where: { ...baseWhere, createdAt: { gte: startOfThisMonth } } }),
+    prisma.grievance.count({ where: { ...baseWhere, createdAt: { gte: startOfLastMonth, lt: startOfThisMonth } } }),
+    prisma.grievance.findMany({ where: baseWhere, select: { createdAt: true, status: true, priority: true, category: { select: { name: true } }, site: { select: { name: true } } } }),
+    prisma.grievanceLog.findMany({ where: { grievance: baseWhere }, orderBy: { createdAt: 'desc' }, take: 5, include: { grievance: { select: { ticketNumber: true } } } }),
+    prisma.site.findMany({ select: { id: true, name: true } })
   ])
 
   // Resolution Time calculation
@@ -144,6 +167,7 @@ export default async function AdminOverviewPage() {
       priorityData={priorityData}
       monthlyData={monthlyData} 
       recentActivity={recentActivity}
+      availableSites={availableSites}
     />
   )
 }

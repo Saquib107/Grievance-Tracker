@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertCircle, CheckCircle2, Clock, FileText } from "lucide-react"
 import Link from "next/link"
 import dynamic from "next/dynamic"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 // Dynamically import Recharts to reduce initial bundle size
 const BarChart = dynamic(() => import("recharts").then(mod => mod.BarChart), { ssr: false, loading: () => <div className="h-full w-full animate-pulse bg-slate-100 dark:bg-slate-800 rounded-md"></div> })
@@ -21,57 +22,9 @@ const PieChart = dynamic(() => import("recharts").then(mod => mod.PieChart), { s
 const Pie = dynamic(() => import("recharts").then(mod => mod.Pie), { ssr: false })
 const Cell = dynamic(() => import("recharts").then(mod => mod.Cell), { ssr: false })
 
-// Mock Data
-const monthlyData = [
-  { name: 'Jan', total: 12, resolved: 10, pending: 2 },
-  { name: 'Feb', total: 19, resolved: 15, pending: 4 },
-  { name: 'Mar', total: 15, resolved: 13, pending: 2 },
-  { name: 'Apr', total: 22, resolved: 18, pending: 4 },
-  { name: 'May', total: 30, resolved: 22, pending: 8 },
-  { name: 'Jun', total: 25, resolved: 10, pending: 15 },
-]
-
-const priorityData = [
-  { name: 'Critical', value: 12 },
-  { name: 'High', value: 25 },
-  { name: 'Medium', value: 45 },
-  { name: 'Low', value: 18 }
-]
-const priorityColors = ['#ef4444', '#f97316', '#eab308', '#3b82f6']
-
-const statusData = [
-  { name: 'Open', value: 30 },
-  { name: 'Investigating', value: 20 },
-  { name: 'Resolved', value: 40 },
-  { name: 'Closed', value: 10 }
-]
-const statusColors = ['#f59e0b', '#a855f7', '#10b981', '#64748b']
-
-const slaTrendData = [
-  { name: 'Jan', compliance: 98 },
-  { name: 'Feb', compliance: 96 },
-  { name: 'Mar', compliance: 93 },
-  { name: 'Apr', compliance: 91 },
-  { name: 'May', compliance: 94 },
-  { name: 'Jun', compliance: 89 },
-]
-
-const resolutionTimeData = [
-  { name: 'Jan', days: 2.1 },
-  { name: 'Feb', days: 2.5 },
-  { name: 'Mar', days: 2.8 },
-  { name: 'Apr', days: 3.2 },
-  { name: 'May', days: 2.9 },
-  { name: 'Jun', days: 4.1 },
-]
-
-const deptData = [
-  { name: 'Payroll', cases: 35 },
-  { name: 'HR', cases: 20 },
-  { name: 'Safety', cases: 10 },
-  { name: 'IT', cases: 8 },
-  { name: 'Facilities', cases: 5 },
-]
+// Colors for charts
+const priorityColors = ['#ef4444', '#f97316', '#eab308', '#3b82f6', '#94a3b8']
+const statusColors = ['#f59e0b', '#a855f7', '#10b981', '#64748b', '#3b82f6', '#ef4444', '#ec4899']
 const COLORS = ['#4f46e5', '#0ea5e9', '#f59e0b', '#ef4444', '#8b5cf6']
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -94,10 +47,42 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 }
 
-const AnalyticsDashboard = React.memo(function AnalyticsDashboard({ stats }: { stats: any }) {
-  const [dateRange, setDateRange] = useState("year")
-  const [site, setSite] = useState("all")
-  const [category, setCategory] = useState("all")
+const AnalyticsDashboard = React.memo(function AnalyticsDashboard({ 
+  stats,
+  monthlyData = [],
+  priorityData = [],
+  statusData = [],
+  deptData = [],
+  slaTrendData = [],
+  resolutionTimeData = [],
+  availableSites = []
+}: { 
+  stats: any,
+  monthlyData?: any[],
+  priorityData?: any[],
+  statusData?: any[],
+  deptData?: any[],
+  slaTrendData?: any[],
+  resolutionTimeData?: any[],
+  availableSites?: any[]
+}) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  const dateRange = searchParams.get("dateRange") || "all"
+  const site = searchParams.get("site") || "all"
+  const category = searchParams.get("category") || "all"
+
+  const updateFilter = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (value && value !== "all") {
+      params.set(key, value)
+    } else {
+      params.delete(key)
+    }
+    router.push(`${pathname}?${params.toString()}`)
+  }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10">
@@ -110,26 +95,28 @@ const AnalyticsDashboard = React.memo(function AnalyticsDashboard({ stats }: { s
         </div>
         
         <div className="flex flex-wrap gap-3">
-          <Select value={dateRange} onValueChange={(val) => setDateRange(val || "")}>
+          <Select value={dateRange} onValueChange={(val) => updateFilter("dateRange", val || "")}>
             <SelectTrigger className="w-[140px] h-9 text-xs font-medium"><SelectValue placeholder="Date Range" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="7days">Last 7 Days</SelectItem>
               <SelectItem value="month">Last Month</SelectItem>
+              <SelectItem value="thisQuarter">This Quarter</SelectItem>
               <SelectItem value="year">Current Year</SelectItem>
               <SelectItem value="all">All Time</SelectItem>
             </SelectContent>
           </Select>
           
-          <Select value={site} onValueChange={(val) => setSite(val || "")}>
+          <Select value={site} onValueChange={(val) => updateFilter("site", val || "")}>
             <SelectTrigger className="w-[140px] h-9 text-xs font-medium"><SelectValue placeholder="Site" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Sites</SelectItem>
-              <SelectItem value="bsp">BSP Bhilai</SelectItem>
-              <SelectItem value="noida">Noida HO</SelectItem>
+              {availableSites.map(s => (
+                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
-          <Select value={category} onValueChange={(val) => setCategory(val || "")}>
+          <Select value={category} onValueChange={(val) => updateFilter("category", val || "")}>
             <SelectTrigger className="w-[140px] h-9 text-xs font-medium"><SelectValue placeholder="Category" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
