@@ -2,11 +2,9 @@
 
 import React, { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AlertCircle, CheckCircle2, Clock, FileText } from "lucide-react"
 import Link from "next/link"
 import dynamic from "next/dynamic"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 // Dynamically import Recharts to reduce initial bundle size
 const BarChart = dynamic(() => import("recharts").then(mod => mod.BarChart), { ssr: false, loading: () => <div className="h-full w-full animate-pulse bg-slate-100 dark:bg-slate-800 rounded-md"></div> })
@@ -54,8 +52,7 @@ const AnalyticsDashboard = React.memo(function AnalyticsDashboard({
   statusData = [],
   deptData = [],
   slaTrendData = [],
-  resolutionTimeData = [],
-  availableSites = []
+  resolutionTimeData = []
 }: { 
   stats: any,
   monthlyData?: any[],
@@ -63,27 +60,8 @@ const AnalyticsDashboard = React.memo(function AnalyticsDashboard({
   statusData?: any[],
   deptData?: any[],
   slaTrendData?: any[],
-  resolutionTimeData?: any[],
-  availableSites?: any[]
+  resolutionTimeData?: any[]
 }) {
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-
-  const dateRange = searchParams.get("dateRange") || "all"
-  const site = searchParams.get("site") || "all"
-  const category = searchParams.get("category") || "all"
-
-  const updateFilter = (key: string, value: string) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (value && value !== "all") {
-      params.set(key, value)
-    } else {
-      params.delete(key)
-    }
-    router.push(`${pathname}?${params.toString()}`)
-  }
-
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10">
       
@@ -94,38 +72,7 @@ const AnalyticsDashboard = React.memo(function AnalyticsDashboard({
           <p className="text-sm text-slate-500 mt-1">Real-time business intelligence and performance metrics.</p>
         </div>
         
-        <div className="flex flex-wrap gap-3">
-          <Select value={dateRange} onValueChange={(val) => updateFilter("dateRange", val || "")}>
-            <SelectTrigger className="w-[140px] h-9 text-xs font-medium"><SelectValue placeholder="Date Range" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7days">Last 7 Days</SelectItem>
-              <SelectItem value="month">Last Month</SelectItem>
-              <SelectItem value="thisQuarter">This Quarter</SelectItem>
-              <SelectItem value="year">Current Year</SelectItem>
-              <SelectItem value="all">All Time</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Select value={site} onValueChange={(val) => updateFilter("site", val || "")}>
-            <SelectTrigger className="w-[140px] h-9 text-xs font-medium"><SelectValue placeholder="Site" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Sites</SelectItem>
-              {availableSites.map(s => (
-                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={category} onValueChange={(val) => updateFilter("category", val || "")}>
-            <SelectTrigger className="w-[140px] h-9 text-xs font-medium"><SelectValue placeholder="Category" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="payroll">Payroll</SelectItem>
-              <SelectItem value="harassment">Harassment</SelectItem>
-              <SelectItem value="safety">Safety</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Filters removed for performance */}
       </div>
 
       {/* KPI Cards (Drill-Down Links) */}

@@ -4,10 +4,7 @@ import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import AdminDashboardClient from "./AdminDashboardClient"
 
-export default async function AdminOverviewPage(props: {
-  searchParams: Promise<{ site?: string, dateRange?: string, department?: string }>
-}) {
-  const searchParams = await props.searchParams;
+export default async function AdminOverviewPage() {
   const session = await getServerSession(authOptions)
   
   if (!session || session.user.role !== "ADMIN") {
@@ -19,106 +16,73 @@ export default async function AdminOverviewPage(props: {
   const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
 
-  // Parse filters
-  const siteFilter = searchParams.site && searchParams.site !== "all" ? searchParams.site : undefined;
-  const deptFilter = searchParams.department && searchParams.department !== "all" ? searchParams.department : undefined;
-  let dateFilter = undefined;
-  if (searchParams.dateRange === '7days') dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  else if (searchParams.dateRange === 'month') dateFilter = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-  else if (searchParams.dateRange === 'year') dateFilter = new Date(now.getFullYear(), 0, 1);
-  else if (searchParams.dateRange === 'thisQuarter') {
-    const q = Math.floor(now.getMonth() / 3);
-    dateFilter = new Date(now.getFullYear(), q * 3, 1);
-  }
-
-  // Base where clause for grievances
-  const baseWhere: any = {};
-  if (siteFilter) baseWhere.siteId = siteFilter;
-  if (deptFilter) baseWhere.department = deptFilter;
-  if (dateFilter) baseWhere.createdAt = { gte: dateFilter };
-
-  // Run all DB queries concurrently to fix waterfall performance issue
+  // Fetch only what's needed using fewer queries to prevent exhausting the DB connection pool
   const [
-    totalGrievances,
-    openCases,
-    resolvedCases,
-    overdueCases,
+    grievances,
     totalEmployees,
     totalHR,
     totalSites,
-    submittedToday,
-    highPriorityCases,
-    anonymousComplaints,
-    escalatedCases,
-    resolvedGrievances,
-    grievancesThisMonth,
-    grievancesLastMonth,
-    grievances,
-    recentLogs,
-    availableSites
+    recentLogs
   ] = await Promise.all([
-    prisma.grievance.count({ where: baseWhere }),
-    prisma.grievance.count({ where: { ...baseWhere, status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] } } }),
-    prisma.grievance.count({ where: { ...baseWhere, status: { in: ["RESOLVED", "CLOSED"] } } }),
-    prisma.grievance.count({ where: { ...baseWhere, status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] }, slaDueDate: { lt: now } } }),
+    prisma.grievance.findMany({ 
+      select: { 
+        id: true, createdAt: true, status: true, priority: true, isAnonymous: true, 
+        escalationLevel: true, dateResolved: true, slaDueDate: true, 
+        site: { select: { name: true } }, ticketNumber: true, employee: { select: { name: true } }
+      } 
+    }),
     prisma.user.count({ where: { role: "EMPLOYEE" } }),
     prisma.user.count({ where: { role: { in: ["HR", "ADMIN"] } } }),
     prisma.site.count(),
-    prisma.grievance.count({ where: { ...baseWhere, createdAt: { gte: todayStart } } }),
-    prisma.grievance.count({ where: { ...baseWhere, priority: { in: ["HIGH", "CRITICAL"] }, status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] } } }),
-    prisma.grievance.count({ where: { ...baseWhere, isAnonymous: true } }),
-    prisma.grievance.count({ where: { ...baseWhere, escalationLevel: { gt: 0 }, status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] } } }),
-    prisma.grievance.findMany({ where: { ...baseWhere, status: { in: ["RESOLVED", "CLOSED"] }, dateResolved: { not: null } }, select: { createdAt: true, dateResolved: true } }),
-    prisma.grievance.count({ where: { ...baseWhere, createdAt: { gte: startOfThisMonth } } }),
-    prisma.grievance.count({ where: { ...baseWhere, createdAt: { gte: startOfLastMonth, lt: startOfThisMonth } } }),
-    prisma.grievance.findMany({ where: baseWhere, select: { createdAt: true, status: true, priority: true, category: { select: { name: true } }, site: { select: { name: true } } } }),
-    prisma.grievanceLog.findMany({ where: { grievance: baseWhere }, orderBy: { createdAt: 'desc' }, take: 5, include: { grievance: { select: { ticketNumber: true } } } }),
-    prisma.site.findMany({ select: { id: true, name: true } })
+    prisma.grievanceLog.findMany({ orderBy: { createdAt: 'desc' }, take: 5, include: { grievance: { select: { ticketNumber: true } } } })
   ])
 
-  // Resolution Time calculation
-  let averageResolutionTime = 0
-  if (resolvedGrievances.length > 0) {
-    const totalDays = resolvedGrievances.reduce((acc, curr) => {
-      const diffTime = Math.abs(curr.dateResolved!.getTime() - curr.createdAt.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-      return acc + diffDays;
-    }, 0)
-    averageResolutionTime = Number((totalDays / resolvedGrievances.length).toFixed(1))
-  }
-
-  // Month-over-month trend for Total Grievances
-  let trendPercentage = 0;
-  if (grievancesLastMonth > 0) {
-    trendPercentage = Math.round(((grievancesThisMonth - grievancesLastMonth) / grievancesLastMonth) * 100)
-  } else if (grievancesThisMonth > 0) {
-    trendPercentage = 100 // if 0 last month but some this month
-  }
-
-  // Chart Data preparation
+  // In-memory calculations
+  let totalGrievances = grievances.length;
+  let openCases = 0;
+  let resolvedCases = 0;
+  let overdueCases = 0;
+  let submittedToday = 0;
+  let highPriorityCases = 0;
+  let anonymousComplaints = 0;
+  let escalatedCases = 0;
+  let grievancesThisMonth = 0;
+  let grievancesLastMonth = 0;
+  let resolvedGrievances: any[] = [];
+  
   const siteMap = new Map<string, number>()
   const monthlyMap = new Map<string, number>()
   const statusMap = new Map<string, number>()
   const priorityMap = new Map<string, number>()
-
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-  
-  grievances.forEach(g => {
-    // Site
+
+  for (const g of grievances) {
+    const isResolved = g.status === "RESOLVED" || g.status === "CLOSED";
+    const isRejected = g.status === "REJECTED";
+    const isOpen = !isResolved && !isRejected;
+
+    if (isOpen) openCases++;
+    if (isResolved) {
+      resolvedCases++;
+      if (g.dateResolved) resolvedGrievances.push(g);
+    }
+    if (isOpen && g.slaDueDate && g.slaDueDate < now) overdueCases++;
+    if (g.createdAt >= todayStart) submittedToday++;
+    if ((g.priority === "HIGH" || g.priority === "CRITICAL") && isOpen) highPriorityCases++;
+    if (g.isAnonymous) anonymousComplaints++;
+    if (g.escalationLevel > 0 && isOpen) escalatedCases++;
+    if (g.createdAt >= startOfThisMonth) grievancesThisMonth++;
+    if (g.createdAt >= startOfLastMonth && g.createdAt < startOfThisMonth) grievancesLastMonth++;
+
+    // Charts
     const siteName = g.site?.name || "Unassigned"
     siteMap.set(siteName, (siteMap.get(siteName) || 0) + 1)
-    
-    // Status
     statusMap.set(g.status, (statusMap.get(g.status) || 0) + 1)
-
-    // Priority
     priorityMap.set(g.priority, (priorityMap.get(g.priority) || 0) + 1)
-
-    // Monthly
-    const date = new Date(g.createdAt)
-    const monthKey = `${monthNames[date.getMonth()]} ${date.getFullYear()}`
-    monthlyMap.set(monthKey, (monthlyMap.get(monthKey) || 0) + 1)
-  })
+    const d = new Date(g.createdAt)
+    const mKey = `${monthNames[d.getMonth()]} ${d.getFullYear()}`
+    monthlyMap.set(mKey, (monthlyMap.get(mKey) || 0) + 1)
+  }
 
   const siteData = Array.from(siteMap, ([name, value]) => ({ name, value }))
   const statusData = Array.from(statusMap, ([name, value]) => ({ name, value }))
@@ -152,6 +116,25 @@ export default async function AdminOverviewPage(props: {
     }))
   }
 
+  // Resolution Time calculation
+  let averageResolutionTime = 0
+  if (resolvedGrievances.length > 0) {
+    const totalDays = resolvedGrievances.reduce((acc, curr) => {
+      const diffTime = Math.abs(curr.dateResolved!.getTime() - curr.createdAt.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+      return acc + diffDays;
+    }, 0)
+    averageResolutionTime = Number((totalDays / resolvedGrievances.length).toFixed(1))
+  }
+
+  // Month-over-month trend for Total Grievances
+  let trendPercentage = 0;
+  if (grievancesLastMonth > 0) {
+    trendPercentage = Math.round(((grievancesThisMonth - grievancesLastMonth) / grievancesLastMonth) * 100)
+  } else if (grievancesThisMonth > 0) {
+    trendPercentage = 100 // if 0 last month but some this month
+  }
+
   const metrics = {
     totalGrievances, openCases, resolvedCases, overdueCases,
     totalEmployees, totalHR, totalSites, submittedToday,
@@ -167,7 +150,6 @@ export default async function AdminOverviewPage(props: {
       priorityData={priorityData}
       monthlyData={monthlyData} 
       recentActivity={recentActivity}
-      availableSites={availableSites}
     />
   )
 }

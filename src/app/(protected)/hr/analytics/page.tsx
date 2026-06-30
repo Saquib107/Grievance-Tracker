@@ -4,10 +4,7 @@ import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import AnalyticsDashboard from "@/components/AnalyticsDashboard"
 
-export default async function HRAnalyticsPage(props: {
-  searchParams: Promise<{ site?: string, dateRange?: string, category?: string }>
-}) {
-  const searchParams = await props.searchParams;
+export default async function HRAnalyticsPage() {
   const session = await getServerSession(authOptions)
   
   if (!session || (session.user.role !== "HR" && session.user.role !== "ADMIN")) {
@@ -16,53 +13,20 @@ export default async function HRAnalyticsPage(props: {
 
   const now = new Date()
 
-  // Parse filters
-  const siteFilter = searchParams.site && searchParams.site !== "all" ? searchParams.site : undefined;
-  const categoryFilter = searchParams.category && searchParams.category !== "all" ? searchParams.category : undefined;
-  let dateFilter = undefined;
-  if (searchParams.dateRange === '7days') dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  else if (searchParams.dateRange === 'month') dateFilter = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-  else if (searchParams.dateRange === 'year') dateFilter = new Date(now.getFullYear(), 0, 1);
-  else if (searchParams.dateRange === 'thisQuarter') {
-    const q = Math.floor(now.getMonth() / 3);
-    dateFilter = new Date(now.getFullYear(), q * 3, 1);
-  }
+  // Single fast query instead of multiple counts
+  const grievances = await prisma.grievance.findMany({ 
+    select: { createdAt: true, status: true, priority: true, department: true, dateResolved: true, slaDueDate: true } 
+  });
 
-  // Base where clause for grievances
-  const baseWhere: any = {};
-  if (siteFilter) baseWhere.siteId = siteFilter;
-  if (categoryFilter) {
-    const cat = await prisma.category.findFirst({ where: { name: { equals: categoryFilter, mode: 'insensitive' } } });
-    if (cat) baseWhere.categoryId = cat.id;
-  }
-  if (dateFilter) baseWhere.createdAt = { gte: dateFilter };
+  let total = grievances.length;
+  let pendingCount = 0;
+  let resolvedCount = 0;
+  let overdueCount = 0;
 
-  // Calculate live stats
-  const [
-    total,
-    pendingCount,
-    resolvedCount,
-    overdueCount,
-    grievances,
-    availableSites,
-    availableCategories
-  ] = await Promise.all([
-    prisma.grievance.count({ where: baseWhere }),
-    prisma.grievance.count({ where: { ...baseWhere, status: { in: ["SUBMITTED", "UNDER_REVIEW", "APPROVED", "ASSIGNED", "IN_PROGRESS"] } } }),
-    prisma.grievance.count({ where: { ...baseWhere, status: { in: ["RESOLVED", "CLOSED"] } } }),
-    prisma.grievance.count({ where: { ...baseWhere, slaDueDate: { lt: now }, status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] } } }),
-    prisma.grievance.findMany({ where: baseWhere, select: { createdAt: true, status: true, priority: true, department: true, dateResolved: true, slaDueDate: true } }),
-    prisma.site.findMany({ select: { id: true, name: true } }),
-    prisma.category.findMany({ select: { id: true, name: true } })
-  ])
-
-  const stats = {
-    total,
-    pending: pendingCount,
-    resolved: resolvedCount,
-    overdue: overdueCount
-  }
-
+  const deptMap = new Map<string, number>()
+  const priorityMap = new Map<string, number>()
+  const statusMap = new Map<string, number>()
+  
   // Real data calculations
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
   
@@ -72,19 +36,18 @@ export default async function HRAnalyticsPage(props: {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
     monthlyMap.set(`${monthNames[d.getMonth()]}`, { total: 0, resolved: 0, pending: 0 })
   }
-
-  // 2. Priority Data
-  const priorityMap = new Map<string, number>()
-  // 3. Status Data
-  const statusMap = new Map<string, number>()
-  // 4. Dept Data
-  const deptMap = new Map<string, number>()
-  
   // Resolution Time & SLA
   const slaMap = new Map<string, { total: number, compliant: number }>()
   const resTimeMap = new Map<string, { totalDays: number, count: number }>()
 
   grievances.forEach(g => {
+    // Top Stats
+    if (g.status === "RESOLVED" || g.status === "CLOSED") resolvedCount++;
+    else if (g.status !== "REJECTED") {
+      if (["SUBMITTED", "UNDER_REVIEW", "APPROVED", "ASSIGNED", "IN_PROGRESS"].includes(g.status)) pendingCount++;
+      if (g.slaDueDate && g.slaDueDate < now) overdueCount++;
+    }
+
     // Priority
     priorityMap.set(g.priority, (priorityMap.get(g.priority) || 0) + 1)
     // Status
@@ -140,14 +103,13 @@ export default async function HRAnalyticsPage(props: {
   return (
     <div className="py-6">
       <AnalyticsDashboard 
-        stats={stats} 
+        stats={{ total, pending: pendingCount, resolved: resolvedCount, overdue: overdueCount }} 
         monthlyData={monthlyData}
         priorityData={priorityData}
         statusData={statusData}
         deptData={deptData}
         slaTrendData={slaTrendData}
         resolutionTimeData={resolutionTimeData}
-        availableSites={availableSites}
       />
     </div>
   )

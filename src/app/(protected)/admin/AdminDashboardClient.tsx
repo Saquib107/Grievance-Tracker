@@ -6,8 +6,6 @@ import { Users, Inbox, CheckCircle, Clock, AlertTriangle, FileText, Plus, Activi
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 const COLORS = ['#4f46e5', '#ec4899', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444', '#06b6d4', '#64748b']
 
@@ -17,35 +15,15 @@ export default function AdminDashboardClient({
   statusData, 
   priorityData,
   monthlyData,
-  recentActivity,
-  availableSites
+  recentActivity
 }: { 
   metrics: any, 
   siteData: any[], 
   statusData: any[],
   priorityData: any[],
   monthlyData: any[],
-  recentActivity: any[],
-  availableSites?: any[]
+  recentActivity: any[]
 }) {
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-
-  const currentSite = searchParams.get("site") || "all"
-  const currentDateRange = searchParams.get("dateRange") || "all"
-  const currentDept = searchParams.get("department") || "all"
-
-  const updateFilter = (key: string, value: string) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (value && value !== "all") {
-      params.set(key, value)
-    } else {
-      params.delete(key)
-    }
-    router.push(`${pathname}?${params.toString()}`)
-  }
-
   const [lastUpdated, setLastUpdated] = useState("")
 
   useEffect(() => {
@@ -81,44 +59,7 @@ export default function AdminDashboardClient({
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <Select value={currentSite} onValueChange={(val) => updateFilter("site", val || "")}>
-          <SelectTrigger className="w-[180px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-            <SelectValue placeholder="All Sites" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Sites</SelectItem>
-            {availableSites?.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-
-        <Select value={currentDateRange} onValueChange={(val) => updateFilter("dateRange", val || "")}>
-          <SelectTrigger className="w-[180px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-            <SelectValue placeholder="Date Range" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Time</SelectItem>
-            <SelectItem value="7days">Last 7 Days</SelectItem>
-            <SelectItem value="month">Last Month</SelectItem>
-            <SelectItem value="thisQuarter">This Quarter</SelectItem>
-            <SelectItem value="year">This Year</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={currentDept} onValueChange={(val) => updateFilter("department", val || "")}>
-          <SelectTrigger className="w-[180px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-            <SelectValue placeholder="All Departments" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Departments</SelectItem>
-            <SelectItem value="HR">HR</SelectItem>
-            <SelectItem value="Operations">Operations</SelectItem>
-            <SelectItem value="IT">IT</SelectItem>
-            <SelectItem value="Finance">Finance</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Top Filters removed for performance */}
 
       {/* Primary KPIs */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
