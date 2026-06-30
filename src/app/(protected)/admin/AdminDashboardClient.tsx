@@ -138,7 +138,7 @@ export default function AdminDashboardClient({
       </div>
 
       {/* Secondary Quick Statistics */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         <Card className="border-[#ECECEC] dark:border-slate-800 shadow-sm bg-[#FFFFFF] dark:bg-slate-900">
           <CardHeader className="p-4 pb-0">
             <CardTitle className="text-sm font-medium text-slate-500 flex items-center gap-2">Average Resolution</CardTitle>

@@ -561,11 +561,11 @@ export default function HRCasesTableClient({
 
       {/* Pagination Footer */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-2 pt-2">
+        <div className="flex flex-col sm:flex-row items-center justify-between px-2 pt-2 gap-4">
           <div className="text-sm text-slate-500">
             Showing {(currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, processedGrievances.length)} of {processedGrievances.length}
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-1 overflow-x-auto max-w-full pb-2 sm:pb-0">
             <Button 
               variant="outline" 
               size="sm" 

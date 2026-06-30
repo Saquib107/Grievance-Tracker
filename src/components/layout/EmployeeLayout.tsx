@@ -177,7 +177,7 @@ export default function EmployeeLayout({ user, children }: { user: any, children
           </div>
         </div>
       </nav>
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 overflow-x-hidden min-w-0">
         {children}
       </main>
     </div>

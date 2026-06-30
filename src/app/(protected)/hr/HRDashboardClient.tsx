@@ -60,14 +60,14 @@ export default function HRDashboardClient({ data }: { data: DashboardData }) {
         <div className="mt-4 md:mt-0 text-right flex flex-col md:items-end">
           <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{data.user.dateStr}</p>
           <div className="flex items-center gap-4 mt-2">
-            <div className="text-xs font-medium text-slate-500 flex items-center gap-2 bg-slate-50 dark:bg-slate-800/50 px-3 py-1.5 rounded-md border border-slate-100 dark:border-slate-800">
+            <div className="text-xs font-medium text-slate-500 flex flex-wrap justify-end md:justify-center items-center gap-3 bg-slate-50 dark:bg-slate-800/50 px-3 py-2 rounded-md border border-slate-100 dark:border-slate-800">
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500"></span> Pending {data.kpis.pendingApproval}</span>
-              <span className="w-px h-3 bg-slate-300 dark:bg-slate-700 mx-1"></span>
+              <span className="hidden md:block w-px h-3 bg-slate-300 dark:bg-slate-700"></span>
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-500"></span> Assigned {data.kpis.assignedToMe}</span>
-              <span className="w-px h-3 bg-slate-300 dark:bg-slate-700 mx-1"></span>
+              <span className="hidden md:block w-px h-3 bg-slate-300 dark:bg-slate-700"></span>
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span> Overdue {data.kpis.overdueSLA}</span>
-              <span className="w-px h-3 bg-slate-300 dark:bg-slate-700 mx-1"></span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Closed Today {data.kpis.closedToday}</span>
+              <span className="hidden md:block w-px h-3 bg-slate-300 dark:bg-slate-700"></span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Closed {data.kpis.closedToday}</span>
             </div>
             
             <div className="flex gap-2">
@@ -255,9 +255,9 @@ export default function HRDashboardClient({ data }: { data: DashboardData }) {
             {data.pipeline.map((stage, index) => {
               const width = Math.max((stage.value / totalPipeline) * 100, 2)
               return (
-                <div key={index} className="flex items-center gap-4">
-                  <div className="w-24 text-sm font-medium text-slate-600 dark:text-slate-400 text-right">{stage.name}</div>
-                  <div className="flex-1 h-6 bg-slate-100 dark:bg-slate-800 rounded-r-md overflow-hidden flex items-center">
+                <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                  <div className="w-full sm:w-24 text-sm font-medium text-slate-600 dark:text-slate-400 sm:text-right">{stage.name}</div>
+                  <div className="flex-1 h-6 bg-slate-100 dark:bg-slate-800 rounded-md sm:rounded-l-none sm:rounded-r-md overflow-hidden flex items-center w-full">
                     <div 
                       className="h-full bg-indigo-500 flex items-center px-2 transition-all duration-1000 ease-out" 
                       style={{ width: `${width}%`, backgroundColor: COLORS[index % COLORS.length] }}
