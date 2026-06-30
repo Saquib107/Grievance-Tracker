@@ -16,51 +16,44 @@ export default async function AdminOverviewPage() {
   const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
 
-  // KPI Metrics
-  const totalGrievances = await prisma.grievance.count()
-  const openCases = await prisma.grievance.count({
-    where: { status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] } }
-  })
-  const resolvedCases = await prisma.grievance.count({
-    where: { status: { in: ["RESOLVED", "CLOSED"] } }
-  })
-  const overdueCases = await prisma.grievance.count({
-    where: { 
-      status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] },
-      slaDueDate: { lt: now }
-    }
-  })
-  
-  const totalEmployees = await prisma.user.count({ where: { role: "EMPLOYEE" } })
-  const totalHR = await prisma.user.count({ where: { role: { in: ["HR", "ADMIN"] } } })
-  const totalSites = await prisma.site.count()
-  
-  const submittedToday = await prisma.grievance.count({
-    where: { createdAt: { gte: todayStart } }
-  })
-
-  // New Metrics for Dashboard Improvements
-  const highPriorityCases = await prisma.grievance.count({
-    where: { 
-      priority: { in: ["HIGH", "CRITICAL"] },
-      status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] }
-    }
-  })
-
-  const anonymousComplaints = await prisma.grievance.count({
-    where: { isAnonymous: true }
-  })
-
-  const escalatedCases = await prisma.grievance.count({
-    where: { escalationLevel: { gt: 0 }, status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] } }
-  })
+  // Run all DB queries concurrently to fix waterfall performance issue
+  const [
+    totalGrievances,
+    openCases,
+    resolvedCases,
+    overdueCases,
+    totalEmployees,
+    totalHR,
+    totalSites,
+    submittedToday,
+    highPriorityCases,
+    anonymousComplaints,
+    escalatedCases,
+    resolvedGrievances,
+    grievancesThisMonth,
+    grievancesLastMonth,
+    grievances,
+    recentLogs
+  ] = await Promise.all([
+    prisma.grievance.count(),
+    prisma.grievance.count({ where: { status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] } } }),
+    prisma.grievance.count({ where: { status: { in: ["RESOLVED", "CLOSED"] } } }),
+    prisma.grievance.count({ where: { status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] }, slaDueDate: { lt: now } } }),
+    prisma.user.count({ where: { role: "EMPLOYEE" } }),
+    prisma.user.count({ where: { role: { in: ["HR", "ADMIN"] } } }),
+    prisma.site.count(),
+    prisma.grievance.count({ where: { createdAt: { gte: todayStart } } }),
+    prisma.grievance.count({ where: { priority: { in: ["HIGH", "CRITICAL"] }, status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] } } }),
+    prisma.grievance.count({ where: { isAnonymous: true } }),
+    prisma.grievance.count({ where: { escalationLevel: { gt: 0 }, status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] } } }),
+    prisma.grievance.findMany({ where: { status: { in: ["RESOLVED", "CLOSED"] }, dateResolved: { not: null } }, select: { createdAt: true, dateResolved: true } }),
+    prisma.grievance.count({ where: { createdAt: { gte: startOfThisMonth } } }),
+    prisma.grievance.count({ where: { createdAt: { gte: startOfLastMonth, lt: startOfThisMonth } } }),
+    prisma.grievance.findMany({ select: { createdAt: true, status: true, priority: true, category: { select: { name: true } }, site: { select: { name: true } } } }),
+    prisma.grievanceLog.findMany({ orderBy: { createdAt: 'desc' }, take: 5, include: { grievance: { select: { ticketNumber: true } } } })
+  ])
 
   // Resolution Time calculation
-  const resolvedGrievances = await prisma.grievance.findMany({
-    where: { status: { in: ["RESOLVED", "CLOSED"] }, dateResolved: { not: null } },
-    select: { createdAt: true, dateResolved: true }
-  })
-  
   let averageResolutionTime = 0
   if (resolvedGrievances.length > 0) {
     const totalDays = resolvedGrievances.reduce((acc, curr) => {
@@ -72,13 +65,6 @@ export default async function AdminOverviewPage() {
   }
 
   // Month-over-month trend for Total Grievances
-  const grievancesThisMonth = await prisma.grievance.count({
-    where: { createdAt: { gte: startOfThisMonth } }
-  })
-  const grievancesLastMonth = await prisma.grievance.count({
-    where: { createdAt: { gte: startOfLastMonth, lt: startOfThisMonth } }
-  })
-  
   let trendPercentage = 0;
   if (grievancesLastMonth > 0) {
     trendPercentage = Math.round(((grievancesThisMonth - grievancesLastMonth) / grievancesLastMonth) * 100)
@@ -87,16 +73,8 @@ export default async function AdminOverviewPage() {
   }
 
   // Chart Data preparation
-  const grievances = await prisma.grievance.findMany({
-    select: { createdAt: true, status: true, priority: true, category: { select: { name: true } }, site: { select: { name: true } } }
-  })
-
-  // Site-wise distribution
   const siteMap = new Map<string, number>()
-  // Monthly trend (last 6 months)
   const monthlyMap = new Map<string, number>()
-  
-  // Status and Priority distributions
   const statusMap = new Map<string, number>()
   const priorityMap = new Map<string, number>()
 
@@ -125,17 +103,6 @@ export default async function AdminOverviewPage() {
   
   // Sort monthly chronologically
   const monthlyData = Array.from(monthlyMap, ([name, value]) => ({ name, value })).reverse().slice(0, 6).reverse()
-
-  // Recent Activity (Logs)
-  let recentLogs = await prisma.grievanceLog.findMany({
-    orderBy: { createdAt: 'desc' },
-    take: 5,
-    include: {
-      grievance: {
-        select: { ticketNumber: true }
-      }
-    }
-  })
   
   // If no logs exist, fetch recent grievances as fallback activity
   let recentActivity = recentLogs.map(log => ({

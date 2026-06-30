@@ -24,45 +24,43 @@ export default async function HRDashboardPage() {
   // Base query for this HR's site
   const siteQuery = siteId ? { siteId } : {}
 
-  // 1. KPIs
-  const pendingApproval = await prisma.grievance.count({
-    where: { ...siteQuery, status: { in: ["SUBMITTED", "UNDER_REVIEW"] } }
-  })
-  
-  const pendingNewToday = await prisma.grievance.count({
-    where: { ...siteQuery, status: { in: ["SUBMITTED", "UNDER_REVIEW"] }, createdAt: { gte: todayStart } }
-  })
+  // Run all independent DB queries concurrently
+  const [
+    pendingApproval,
+    pendingNewToday,
+    assignedToMe,
+    inProgress,
+    overdueSLA,
+    closedToday,
+    resolvedCases,
+    urgentCasesRaw,
+    reviewCount,
+    resolvedCount,
+    catGroups,
+    allCats,
+    deptGroups
+  ] = await Promise.all([
+    prisma.grievance.count({ where: { ...siteQuery, status: { in: ["SUBMITTED", "UNDER_REVIEW"] } } }),
+    prisma.grievance.count({ where: { ...siteQuery, status: { in: ["SUBMITTED", "UNDER_REVIEW"] }, createdAt: { gte: todayStart } } }),
+    prisma.grievance.count({ where: { assignedToId: userId, status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] } } }),
+    prisma.grievance.count({ where: { ...siteQuery, status: "INVESTIGATION" } }),
+    prisma.grievance.count({ where: { ...siteQuery, status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] }, slaDueDate: { lt: now } } }),
+    prisma.grievance.count({ where: { ...siteQuery, status: { in: ["RESOLVED", "CLOSED"] }, dateResolved: { gte: todayStart } } }),
+    prisma.grievance.findMany({ where: { ...siteQuery, status: { in: ["RESOLVED", "CLOSED"] } }, select: { createdAt: true, dateResolved: true, slaDueDate: true } }),
+    prisma.grievance.findMany({
+      where: { ...siteQuery, status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] }, OR: [{ slaDueDate: { lt: now } }, { priority: { in: ["HIGH", "CRITICAL"] } }] },
+      include: { category: true },
+      take: 4,
+      orderBy: { slaDueDate: 'asc' }
+    }),
+    prisma.grievance.count({ where: { ...siteQuery, status: "UNDER_REVIEW" } }),
+    prisma.grievance.count({ where: { ...siteQuery, status: "RESOLVED" } }),
+    prisma.grievance.groupBy({ by: ['categoryId'], where: { ...siteQuery }, _count: { id: true } }),
+    prisma.category.findMany(),
+    prisma.grievance.groupBy({ by: ['department'], where: { ...siteQuery }, _count: { id: true } })
+  ])
 
-  const assignedToMe = await prisma.grievance.count({
-    where: { assignedToId: userId, status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] } }
-  })
-
-  const inProgress = await prisma.grievance.count({
-    where: { ...siteQuery, status: "INVESTIGATION" }
-  })
-
-  const overdueSLA = await prisma.grievance.count({
-    where: { 
-      ...siteQuery,
-      status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] },
-      slaDueDate: { lt: now }
-    }
-  })
-
-  const closedToday = await prisma.grievance.count({
-    where: { 
-      ...siteQuery,
-      status: { in: ["RESOLVED", "CLOSED"] },
-      dateResolved: { gte: todayStart }
-    }
-  })
-  
   // Calculate Avg Resolution & SLA
-  const resolvedCases = await prisma.grievance.findMany({
-    where: { ...siteQuery, status: { in: ["RESOLVED", "CLOSED"] } },
-    select: { createdAt: true, dateResolved: true, slaDueDate: true }
-  })
-
   let totalResolutionDays = 0
   let slaMet = 0
   
@@ -79,21 +77,7 @@ export default async function HRDashboardPage() {
   const avgResolutionDays = resolvedCases.length > 0 ? (totalResolutionDays / resolvedCases.length).toFixed(1) : 0
   const slaCompliancePct = resolvedCases.length > 0 ? Math.round((slaMet / resolvedCases.length) * 100) : 100
 
-  // 2. Urgent Cases (Overdue or High Priority near SLA)
-  const urgentCasesRaw = await prisma.grievance.findMany({
-    where: {
-      ...siteQuery,
-      status: { notIn: ["RESOLVED", "CLOSED", "REJECTED"] },
-      OR: [
-        { slaDueDate: { lt: now } },
-        { priority: { in: ["HIGH", "CRITICAL"] } }
-      ]
-    },
-    include: { category: true },
-    take: 4,
-    orderBy: { slaDueDate: 'asc' }
-  })
-
+  // 2. Urgent Cases
   const urgentCases = urgentCasesRaw.map(c => ({
     id: c.id,
     ticketNumber: c.ticketNumber,
@@ -115,19 +99,12 @@ export default async function HRDashboardPage() {
   // 4. Pipeline
   const pipeline = [
     { name: "Submitted", value: pendingApproval },
-    { name: "Review", value: await prisma.grievance.count({ where: { ...siteQuery, status: "UNDER_REVIEW" } }) },
+    { name: "Review", value: reviewCount },
     { name: "Investigation", value: inProgress },
-    { name: "Resolved", value: await prisma.grievance.count({ where: { ...siteQuery, status: "RESOLVED" } }) }
+    { name: "Resolved", value: resolvedCount }
   ]
 
   // 5. Categories
-  const catGroups = await prisma.grievance.groupBy({
-    by: ['categoryId'],
-    where: { ...siteQuery },
-    _count: { id: true }
-  })
-  
-  const allCats = await prisma.category.findMany()
   const categories = catGroups.map(cg => {
     const name = allCats.find(c => c.id === cg.categoryId)?.name || "Other"
     return { name, value: cg._count.id }
@@ -136,11 +113,6 @@ export default async function HRDashboardPage() {
   if (categories.length === 0) categories.push({ name: "General", value: 1 })
 
   // 6. Departments
-  const deptGroups = await prisma.grievance.groupBy({
-    by: ['department'],
-    where: { ...siteQuery },
-    _count: { id: true }
-  })
   const departments = deptGroups
     .filter(dg => dg.department)
     .map(dg => ({ name: dg.department!, value: dg._count.id }))
