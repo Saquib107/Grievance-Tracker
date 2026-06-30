@@ -33,6 +33,8 @@ model User {
   approvedCases Grievance[] @relation("ApprovedGrievances")
   rejectedCases Grievance[] @relation("RejectedGrievances")
   comments      Comment[]
+  notifications Notification[]
+  sentNotifications Notification[] @relation("SentNotifications")
 }
 
 model Site {
@@ -120,6 +122,7 @@ model Grievance {
   comments     Comment[]
   logs         GrievanceLog[]
   attachments  Attachment[]
+  notifications Notification[]
 }
 
 model Attachment {
@@ -157,6 +160,25 @@ model GrievanceLog {
   changedBy   String?   // "SYSTEM", "PUBLIC", or User Name
   action      String    // e.g., "STATUS_CHANGED", "ASSIGNED"
   details     String?   // JSON string or text details
+  
+  createdAt   DateTime  @default(now())
+}
+
+model Notification {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  type        String    // e.g., "INFO", "SUCCESS", "WARNING", "ERROR"
+  isRead      Boolean   @default(false)
+  
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  grievanceId String?
+  grievance   Grievance? @relation(fields: [grievanceId], references: [id], onDelete: Cascade)
+  
+  senderId    String?
+  sender      User?      @relation("SentNotifications", fields: [senderId], references: [id], onDelete: SetNull)
   
   createdAt   DateTime  @default(now())
 }

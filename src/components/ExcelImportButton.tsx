@@ -3,6 +3,7 @@
 import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { bulkImportGrievances } from "@/app/actions/bulkImport"
+import { toast } from "sonner"
 import { Upload, Loader2 } from "lucide-react"
 import * as XLSX from "xlsx"
 
@@ -28,7 +29,7 @@ export default function ExcelImportButton() {
       const jsonData = XLSX.utils.sheet_to_json(worksheet)
       
       if (jsonData.length === 0) {
-        alert("The uploaded Excel file is empty.")
+        toast.error("The uploaded Excel file is empty.")
         setIsImporting(false)
         return
       }
@@ -36,11 +37,13 @@ export default function ExcelImportButton() {
       const res = await bulkImportGrievances(jsonData)
       
       if (res.success) {
-        alert(`Successfully imported ${res.count} records!`)
+        toast.success(`Successfully imported ${res.count} records!`)
+      } else {
+        toast.error((res as any).error || "Failed to import records")
       }
     } catch (err: any) {
       console.error(err)
-      alert("Failed to import Excel file. Ensure headers match the expected schema.")
+      toast.error("Failed to import Excel file. Ensure headers match the expected schema.")
     } finally {
       setIsImporting(false)
       if (fileInputRef.current) {

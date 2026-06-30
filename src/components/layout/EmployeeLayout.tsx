@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { NotificationBell } from "@/components/ui/notification-bell"
 
 export default function EmployeeLayout({ user, children }: { user: any, children: React.ReactNode }) {
   const pathname = usePathname()
@@ -64,33 +65,7 @@ export default function EmployeeLayout({ user, children }: { user: any, children
 
           <div className="flex items-center gap-4 ml-auto">
             {/* Notification Bell */}
-            <DropdownMenu>
-              <DropdownMenuTrigger className="relative p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors outline-none focus:ring-2 focus:ring-indigo-500">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute top-1 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-950"></span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80">
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel className="flex justify-between items-center">
-                    Notifications
-                    <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">2 New</span>
-                  </DropdownMenuLabel>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                <div className="flex flex-col max-h-[320px] overflow-y-auto">
-                  <div className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer border-l-2 border-indigo-500 transition-colors">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">HR responded to Ticket #GH-1004</p>
-                    <p className="text-xs text-slate-500 mt-1">Please check the ticket for further details.</p>
-                    <p className="text-xs text-indigo-600 mt-1 font-medium">10 mins ago</p>
-                  </div>
-                  <div className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer border-l-2 border-amber-500 transition-colors">
-                    <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Case moved to Investigation</p>
-                    <p className="text-xs text-slate-500 mt-1">Ticket #GH-0992 is now under investigation.</p>
-                    <p className="text-xs text-slate-400 mt-1 font-medium">Yesterday</p>
-                  </div>
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <NotificationBell />
 
             {/* Profile Dropdown */}
             <DropdownMenu>

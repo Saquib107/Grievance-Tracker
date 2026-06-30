@@ -6,6 +6,7 @@ import { signOut } from "next-auth/react"
 import { ShieldAlert, LayoutDashboard, LogOut, Users, MapPin, Inbox, PieChart, FileText, Settings, ClipboardList, UserCog, Bell, ChevronDown, User, Search, Clock, ChevronRight, Menu } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { NotificationBell } from "@/components/ui/notification-bell"
 import {
   Sheet,
   SheetContent,
@@ -188,57 +189,12 @@ export default function AdminLayout({ user, children }: { user: any, children: R
                 Updated {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
               </div>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger className="relative p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors outline-none focus:ring-2 focus:ring-indigo-500">
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute top-1 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900"></span>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80">
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel className="flex justify-between items-center">
-                      Notifications
-                      <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">4 New</span>
-                    </DropdownMenuLabel>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                    <div className="flex flex-col max-h-[320px] overflow-y-auto">
-                      <div className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer border-l-2 border-indigo-500 transition-colors">
-                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">New Complaint</p>
-                        <p className="text-xs text-slate-500 mt-1">Ticket #EMP-1042 needs to be assigned.</p>
-                        <p className="text-xs text-indigo-600 mt-1 font-medium">Just now</p>
-                      </div>
-                      <div className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer border-l-2 border-amber-500 transition-colors">
-                        <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">HR Assigned</p>
-                        <p className="text-xs text-slate-500 mt-1">Shaheen Parween assigned to Case #EMP-0991.</p>
-                        <p className="text-xs text-slate-400 mt-1 font-medium">10 mins ago</p>
-                      </div>
-                      <div className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer border-l-2 border-transparent transition-colors">
-                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Employee Added</p>
-                        <p className="text-xs text-slate-500 mt-1">Rahul Sharma (EMP0023) joined IT Department.</p>
-                        <p className="text-xs text-slate-400 mt-1 font-medium">1 hour ago</p>
-                      </div>
-                      <div className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer border-l-2 border-emerald-500 transition-colors">
-                        <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Report Generated</p>
-                        <p className="text-xs text-slate-500 mt-1">Monthly SLA Report is ready for download.</p>
-                        <p className="text-xs text-slate-400 mt-1 font-medium">Yesterday</p>
-                      </div>
-                    </div>
-                  <DropdownMenuSeparator />
-                  <div className="p-1 text-center">
-                    <button className="text-xs font-medium text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-md w-full p-2 transition-colors">
-                      View All Notifications
-                    </button>
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <NotificationBell />
             </div>
           </div>
 
           <div className="md:hidden flex items-center gap-4">
-            <button className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-full">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500"></span>
-            </button>
+            <NotificationBell />
             <Avatar className="h-8 w-8 ring-2 ring-slate-200">
               <AvatarFallback className="bg-slate-200 text-slate-600">
                 {user.name?.charAt(0) || "U"}

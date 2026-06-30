@@ -13,6 +13,8 @@ import { ArrowUpDown, Download, CheckCircle2, UserPlus, Filter, X, Search, MoreV
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useSearchParams } from "next/navigation"
+import { useDebounce } from "@/hooks/use-debounce"
+import * as XLSX from "xlsx"
 
 export default function HRCasesTableClient({ 
   grievances, 
@@ -37,6 +39,7 @@ export default function HRCasesTableClient({
 
   // Filters
   const [filterSearch, setFilterSearch] = useState("")
+  const debouncedSearch = useDebounce(filterSearch, 300)
   const [filterStatus, setFilterStatus] = useState("ALL")
   const [filterPriority, setFilterPriority] = useState("ALL")
   const [filterCategory, setFilterCategory] = useState("ALL")
@@ -70,8 +73,8 @@ export default function HRCasesTableClient({
     }
 
     // Apply filters
-    if (filterSearch) {
-      const lower = filterSearch.toLowerCase()
+    if (debouncedSearch) {
+      const lower = debouncedSearch.toLowerCase()
       result = result.filter(g => 
         (g.ticketNumber || "").toLowerCase().includes(lower) || 
         (g.subject || "").toLowerCase().includes(lower) ||
@@ -113,12 +116,12 @@ export default function HRCasesTableClient({
     }
 
     return result
-  }, [grievances, filterSearch, filterStatus, filterPriority, filterCategory, filterAssignedTo, sortConfig, quickFilter])
+  }, [grievances, debouncedSearch, filterStatus, filterPriority, filterCategory, filterAssignedTo, sortConfig, quickFilter])
 
   // Reset pagination on filter change
   useMemo(() => {
     setCurrentPage(1)
-  }, [filterSearch, filterStatus, filterPriority, filterCategory, filterAssignedTo, quickFilter])
+  }, [debouncedSearch, filterStatus, filterPriority, filterCategory, filterAssignedTo, quickFilter])
 
   const paginatedGrievances = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage
@@ -202,7 +205,29 @@ export default function HRCasesTableClient({
     link.click()
     document.body.removeChild(link)
     setSelectedIds(new Set())
-    toast.success("Export started")
+    toast.success("Export to CSV started")
+  }
+
+  const handleExportExcel = () => {
+    const toExport = processedGrievances.filter(g => selectedIds.has(g.id))
+    if (toExport.length === 0) return toast.error("Select cases to export")
+
+    const data = toExport.map(g => ({
+      "Ticket ID": g.ticketNumber,
+      "Subject": g.subject,
+      "Category": g.category?.name || "None",
+      "Priority": g.priority,
+      "Status": g.status,
+      "Employee": g.employee?.name || "Anonymous",
+      "Date Submitted": new Date(g.createdAt).toLocaleDateString(),
+    }))
+
+    const worksheet = XLSX.utils.json_to_sheet(data)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Grievances")
+    XLSX.writeFile(workbook, "grievances_export.xlsx")
+    setSelectedIds(new Set())
+    toast.success("Export to Excel started")
   }
 
   // Display Helpers
@@ -350,12 +375,25 @@ export default function HRCasesTableClient({
         </Button>
       </div>
 
-      {/* Filter Summary */}
-      <div className="text-sm text-slate-500 font-medium">
-        Showing <span className="text-slate-900 dark:text-white font-bold">{processedGrievances.length}</span> Cases
-        {filterStatus !== "ALL" && ` • Status: ${filterStatus.replace('_', ' ')}`}
-        {filterPriority !== "ALL" && ` • Priority: ${filterPriority}`}
-        {filterCategory !== "ALL" && ` • Category: Filtered`}
+      {/* Filter Summary and Exports */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="text-sm text-slate-500 font-medium">
+          Showing <span className="text-slate-900 dark:text-white font-bold">{processedGrievances.length}</span> Cases
+          {filterStatus !== "ALL" && ` • Status: ${filterStatus.replace('_', ' ')}`}
+          {filterPriority !== "ALL" && ` • Priority: ${filterPriority}`}
+          {filterCategory !== "ALL" && ` • Category: Filtered`}
+        </div>
+        
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={selectedIds.size === 0} className="h-8">
+            <Download className="h-4 w-4 mr-2" />
+            CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportExcel} disabled={selectedIds.size === 0} className="h-8">
+            <Download className="h-4 w-4 mr-2" />
+            Excel
+          </Button>
+        </div>
       </div>
 
       {/* Bulk Action Toolbar */}

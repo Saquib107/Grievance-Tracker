@@ -13,6 +13,8 @@ import { useRouter } from "next/navigation"
 import { MoreHorizontal, Key, BadgeCheck, Clock, Inbox, CheckCircle2, UserPlus, Activity, Ban, CheckCircle, Trash2, Search, Download, Printer } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import { useDebounce } from "@/hooks/use-debounce"
+import * as XLSX from "xlsx"
 
 export default function UsersClient({ initialUsers, sites, unassignedCasesCount = 0 }: { initialUsers: any[], sites: any[], unassignedCasesCount?: number }) {
   const [users, setUsers] = useState(initialUsers)
@@ -37,6 +39,7 @@ export default function UsersClient({ initialUsers, sites, unassignedCasesCount 
   const [newPassword, setNewPassword] = useState("")
 
   const [filterSearch, setFilterSearch] = useState("")
+  const debouncedSearch = useDebounce(filterSearch, 300)
   const [filterSite, setFilterSite] = useState("ALL")
   const [filterStatus, setFilterStatus] = useState("ALL")
   
@@ -52,8 +55,8 @@ export default function UsersClient({ initialUsers, sites, unassignedCasesCount 
 
   const processedUsers = useMemo(() => {
     let result = users
-    if (filterSearch) {
-      const q = filterSearch.toLowerCase()
+    if (debouncedSearch) {
+      const q = debouncedSearch.toLowerCase()
       result = result.filter(u => (u.name || "").toLowerCase().includes(q) || (u.employeeIdStr || "").toLowerCase().includes(q))
     }
     if (filterSite !== "ALL") result = result.filter(u => u.site?.id === filterSite)
@@ -62,9 +65,9 @@ export default function UsersClient({ initialUsers, sites, unassignedCasesCount 
       if (filterStatus === "INACTIVE") result = result.filter(u => !u.isActive)
     }
     return result
-  }, [users, filterSearch, filterSite, filterStatus])
+  }, [users, debouncedSearch, filterSite, filterStatus])
 
-  useMemo(() => { setCurrentPage(1) }, [filterSearch, filterSite, filterStatus])
+  useMemo(() => { setCurrentPage(1) }, [debouncedSearch, filterSite, filterStatus])
 
   const paginatedUsers = processedUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
   const totalPages = Math.ceil(processedUsers.length / itemsPerPage)
@@ -123,6 +126,47 @@ export default function UsersClient({ initialUsers, sites, unassignedCasesCount 
   const openPerformance = (user: any) => {
     setSelectedHR(user)
     setPerformanceOpen(true)
+  }
+
+  const handleExportCSV = () => {
+    if (processedUsers.length === 0) return toast.error("No users to export")
+    const headers = ["Name", "Employee ID", "Site", "Status", "Cases Assigned", "Cases Resolved"]
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + headers.join(",") + "\n"
+      + processedUsers.map(u => [
+          `"${(u.name || "").replace(/"/g, '""')}"`,
+          u.employeeIdStr || "",
+          u.site?.name || "Unassigned",
+          u.isActive ? "Active" : "Inactive",
+          u.casesAssigned || 0,
+          u.casesResolved || 0
+        ].join(",")).join("\n")
+
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement("a")
+    link.setAttribute("href", encodedUri)
+    link.setAttribute("download", "hr_users_export.csv")
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    toast.success("Export to CSV started")
+  }
+
+  const handleExportExcel = () => {
+    if (processedUsers.length === 0) return toast.error("No users to export")
+    const data = processedUsers.map(u => ({
+      "Name": u.name || "",
+      "Employee ID": u.employeeIdStr || "",
+      "Site": u.site?.name || "Unassigned",
+      "Status": u.isActive ? "Active" : "Inactive",
+      "Cases Assigned": u.casesAssigned || 0,
+      "Cases Resolved": u.casesResolved || 0
+    }))
+    const worksheet = XLSX.utils.json_to_sheet(data)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, "HR_Users")
+    XLSX.writeFile(workbook, "hr_users_export.xlsx")
+    toast.success("Export to Excel started")
   }
 
   return (
@@ -260,8 +304,11 @@ export default function UsersClient({ initialUsers, sites, unassignedCasesCount 
           <Button variant="outline" className="h-9 bg-white" onClick={() => window.print()}>
             <Printer className="h-4 w-4 mr-2" /> Print
           </Button>
-          <Button variant="outline" className="h-9 bg-white">
-            <Download className="h-4 w-4 mr-2" /> Export CSV
+          <Button variant="outline" className="h-9 bg-white" onClick={handleExportCSV}>
+            <Download className="h-4 w-4 mr-2" /> CSV
+          </Button>
+          <Button variant="outline" className="h-9 bg-white" onClick={handleExportExcel}>
+            <Download className="h-4 w-4 mr-2" /> Excel
           </Button>
         </div>
       </div>

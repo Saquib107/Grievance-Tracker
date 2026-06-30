@@ -1,11 +1,25 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { AlertCircle, CheckCircle2, Clock, FileText } from "lucide-react"
 import Link from "next/link"
+import dynamic from "next/dynamic"
+
+// Dynamically import Recharts to reduce initial bundle size
+const BarChart = dynamic(() => import("recharts").then(mod => mod.BarChart), { ssr: false, loading: () => <div className="h-full w-full animate-pulse bg-slate-100 dark:bg-slate-800 rounded-md"></div> })
+const Bar = dynamic(() => import("recharts").then(mod => mod.Bar), { ssr: false })
+const XAxis = dynamic(() => import("recharts").then(mod => mod.XAxis), { ssr: false })
+const YAxis = dynamic(() => import("recharts").then(mod => mod.YAxis), { ssr: false })
+const CartesianGrid = dynamic(() => import("recharts").then(mod => mod.CartesianGrid), { ssr: false })
+const RechartsTooltip = dynamic(() => import("recharts").then(mod => mod.Tooltip), { ssr: false })
+const ResponsiveContainer = dynamic(() => import("recharts").then(mod => mod.ResponsiveContainer), { ssr: false })
+const LineChart = dynamic(() => import("recharts").then(mod => mod.LineChart), { ssr: false })
+const Line = dynamic(() => import("recharts").then(mod => mod.Line), { ssr: false })
+const PieChart = dynamic(() => import("recharts").then(mod => mod.PieChart), { ssr: false })
+const Pie = dynamic(() => import("recharts").then(mod => mod.Pie), { ssr: false })
+const Cell = dynamic(() => import("recharts").then(mod => mod.Cell), { ssr: false })
 
 // Mock Data
 const monthlyData = [
@@ -80,7 +94,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 }
 
-export default function AnalyticsDashboard({ stats }: { stats: any }) {
+const AnalyticsDashboard = React.memo(function AnalyticsDashboard({ stats }: { stats: any }) {
   const [dateRange, setDateRange] = useState("year")
   const [site, setSite] = useState("all")
   const [category, setCategory] = useState("all")
@@ -335,4 +349,6 @@ export default function AnalyticsDashboard({ stats }: { stats: any }) {
       </div>
     </div>
   )
-}
+})
+
+export default AnalyticsDashboard;

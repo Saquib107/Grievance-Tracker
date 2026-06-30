@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Download, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 
@@ -57,10 +58,11 @@ export default function PDFExportButton({ data, title = "Grievance Report", file
         alternateRowStyles: { fillColor: [248, 250, 252] },
       })
 
-      doc.save(filename)
-    } catch (err) {
-      console.error("Failed to generate PDF", err)
-      alert("Failed to generate PDF")
+      doc.save("Grievances_Report.pdf")
+      toast.success("PDF exported successfully!")
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to generate PDF")
     } finally {
       setIsExporting(false)
     }

@@ -114,6 +114,25 @@ export async function submitGrievance(formData: FormData) {
     }
   })
 
+  // Notify HR/Admins
+  const hrsAndAdmins = await prisma.user.findMany({
+    where: { role: { in: ["HR", "ADMIN"] }, isActive: true },
+    select: { id: true }
+  });
+  
+  if (hrsAndAdmins.length > 0) {
+    await prisma.notification.createMany({
+      data: hrsAndAdmins.map(hr => ({
+        userId: hr.id,
+        title: "New Grievance Submitted",
+        description: `Ticket ${ticketNumber} has been submitted.`,
+        type: "INFO",
+        grievanceId: newGrievance.id,
+        senderId: session.user.id
+      }))
+    });
+  }
+
   revalidatePath("/dashboard")
   redirect(onBehalf ? `/hr/cases` : `/grievances/${newGrievance.id}`)
 }
@@ -158,6 +177,19 @@ export async function updateGrievanceStatus(grievanceId: string, status: string)
     })
   }
 
+  if (updated.employeeId) {
+    await prisma.notification.create({
+      data: {
+        userId: updated.employeeId,
+        title: "Grievance Status Updated",
+        description: `Ticket ${updated.ticketNumber} is now ${status.replace('_', ' ')}.`,
+        type: "INFO",
+        grievanceId: updated.id,
+        senderId: session.user.id
+      }
+    });
+  }
+
   revalidatePath(`/hr/cases/${grievanceId}`)
   revalidatePath("/hr/cases")
 }
@@ -169,10 +201,37 @@ export async function assignGrievance(grievanceId: string, assignedToId: string 
     throw new Error("Unauthorized")
   }
 
-  await prisma.grievance.update({
+  const updated = await prisma.grievance.update({
     where: { id: grievanceId },
-    data: { assignedToId }
+    data: { assignedToId },
+    include: { employee: true, assignedTo: true }
   })
+
+  if (assignedToId) {
+    await prisma.notification.create({
+      data: {
+        userId: assignedToId,
+        title: "New Grievance Assigned",
+        description: `You have been assigned to Ticket ${updated.ticketNumber}.`,
+        type: "INFO",
+        grievanceId: updated.id,
+        senderId: session.user.id
+      }
+    });
+  }
+
+  if (updated.employeeId) {
+    await prisma.notification.create({
+      data: {
+        userId: updated.employeeId,
+        title: "Grievance Assigned",
+        description: `Ticket ${updated.ticketNumber} has been assigned to ${updated.assignedTo?.name || "an officer"}.`,
+        type: "INFO",
+        grievanceId: updated.id,
+        senderId: session.user.id
+      }
+    });
+  }
 
   revalidatePath(`/hr/cases/${grievanceId}`)
   revalidatePath("/hr/cases")
@@ -273,6 +332,19 @@ export async function processGrievanceApproval(
         details: action === "REJECT" ? `Rejected: ${reason}` : "Approved for assignment"
       }
     })
+
+    if (updated.employeeId) {
+      await prisma.notification.create({
+        data: {
+          userId: updated.employeeId,
+          title: `Grievance ${action === "APPROVE" ? "Approved" : "Rejected"}`,
+          description: `Ticket ${updated.ticketNumber} has been ${action === "APPROVE" ? "approved" : `rejected. Reason: ${reason}`}.`,
+          type: action === "APPROVE" ? "SUCCESS" : "ERROR",
+          grievanceId: updated.id,
+          senderId: session.user.id
+        }
+      });
+    }
 
     revalidatePath("/hr/approvals")
     revalidatePath("/hr/cases")
