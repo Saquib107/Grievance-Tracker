@@ -6,6 +6,13 @@ import { signOut } from "next-auth/react"
 import { ShieldAlert, LogOut, User, Menu, Bell, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -129,9 +136,44 @@ export default function EmployeeLayout({ user, children }: { user: any, children
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button variant="ghost" size="icon" className="md:hidden">
-              <Menu className="h-5 w-5 text-slate-600" />
-            </Button>
+            <Sheet>
+              <SheetTrigger render={<Button variant="ghost" size="icon" className="md:hidden" />}>
+                <Menu className="h-5 w-5 text-slate-600 dark:text-slate-300" />
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[300px] bg-slate-50 dark:bg-slate-950">
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+                    <ShieldAlert className="h-5 w-5" />
+                    GrievanceHub
+                  </SheetTitle>
+                </SheetHeader>
+                <div className="py-6 flex flex-col gap-4">
+                  {links.map((link) => {
+                    const isActive = pathname === link.href || pathname.startsWith(link.href)
+                    return (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className={`text-lg font-medium transition-colors hover:text-indigo-600 dark:hover:text-indigo-400 ${
+                          isActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-600 dark:text-slate-400"
+                        }`}
+                      >
+                        {link.label}
+                      </Link>
+                    )
+                  })}
+                  <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
+                    <button
+                      onClick={() => signOut({ callbackUrl: "/login" })}
+                      className="flex items-center text-red-600 dark:text-red-400 text-lg font-medium"
+                    >
+                      <LogOut className="mr-2 h-5 w-5" />
+                      Log out
+                    </button>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </nav>

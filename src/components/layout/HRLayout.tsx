@@ -3,9 +3,16 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
-import { ShieldAlert, LayoutDashboard, Inbox, PieChart, Users, Settings, LogOut, FileText, UserPlus, Bell, ChevronDown, User, Search, Clock, ChevronRight } from "lucide-react"
+import { ShieldAlert, LayoutDashboard, Inbox, PieChart, Users, Settings, LogOut, FileText, UserPlus, Bell, ChevronDown, User, Search, Clock, ChevronRight, Menu } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 
 export default function HRLayout({ user, badges, children }: { user: any, badges?: { pending: number, assigned: number }, children: React.ReactNode }) {
   const pathname = usePathname()
@@ -119,6 +126,59 @@ export default function HRLayout({ user, badges, children }: { user: any, badges
         {/* Top Header */}
         <header className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
           <div className="md:hidden flex items-center font-bold text-xl text-slate-900 dark:text-white">
+            <Sheet>
+              <SheetTrigger render={<button className="mr-3 p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md" />}>
+                <Menu className="h-6 w-6" />
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[300px] bg-[#111827] text-slate-300 border-r-slate-800 p-0">
+                <div className="h-16 flex items-center px-6 font-bold text-xl text-white border-b border-slate-800">
+                  <ShieldAlert className="h-6 w-6 mr-2 text-indigo-400" />
+                  GrievanceHub
+                </div>
+                <div className="py-6 px-3">
+                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4 px-3">
+                    HR Management
+                  </div>
+                  <nav className="space-y-1">
+                    {links.map((link) => {
+                      const Icon = link.icon
+                      const isActive = link.href === "/hr"
+                        ? pathname === "/hr"
+                        : (pathname === link.href || pathname.startsWith(`${link.href}/`))
+                      return (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          className={`flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            isActive
+                              ? "bg-indigo-600 text-white"
+                              : "text-slate-400 hover:text-slate-200"
+                          }`}
+                        >
+                          <div className="flex items-center">
+                            <Icon className={`mr-3 h-5 w-5 flex-shrink-0 ${isActive ? "text-indigo-200" : "text-slate-500"}`} />
+                            {link.label}
+                          </div>
+                          {link.label === "Pending Approval" && badges?.pending !== undefined && badges.pending > 0 && (
+                            <span className="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                              {badges.pending}
+                            </span>
+                          )}
+                          {link.label === "Assigned Cases" && badges?.assigned !== undefined && badges.assigned > 0 && (
+                            <span className="bg-indigo-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                              {badges.assigned}
+                            </span>
+                          )}
+                        </Link>
+                      )
+                    })}
+                  </nav>
+                </div>
+                <div className="absolute bottom-0 w-full p-4 border-t border-slate-800 flex justify-between items-center text-[10px] text-slate-500">
+                  <span>GrievanceHub v1.0</span>
+                </div>
+              </SheetContent>
+            </Sheet>
             <ShieldAlert className="h-6 w-6 mr-2 text-indigo-600 dark:text-indigo-400" />
             GrievanceHub
           </div>
