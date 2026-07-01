@@ -2,13 +2,7 @@
 
 import React, { useState } from 'react'
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, 
-  LineChart, Line, AreaChart, Area, Cell, ComposedChart
-} from 'recharts'
-import { 
-  ShieldAlert, Users, Clock, AlertCircle, CheckCircle2, TrendingUp, TrendingDown,
-  Activity, Star, Bell, Calendar as CalendarIcon, ArrowRight, CheckSquare, 
-  MessageSquare, FileText, UserPlus, FileOutput
+  ShieldAlert, Users, Activity, AlertCircle, TrendingUp, Bell, ArrowRight
 } from "lucide-react"
 import Link from 'next/link'
 
@@ -19,29 +13,15 @@ interface DashboardData {
     assignedToMe: number;
     inProgress: number;
     overdueSLA: number;
-    closedToday: number;
-    avgResolutionDays: number;
-    slaCompliancePct: number;
-    employeeSatisfaction: number;
   };
   urgentCases: { id: string; ticketNumber: string; category: string; department: string; urgency: string; message: string; color: string }[];
   recentActivity: { time: string; text: string }[];
-  pipeline: { name: string; value: number }[];
-  categories: { name: string; value: number }[];
-  departments: { name: string; value: number }[];
-  monthlyTrend: { month: string; cases: number }[];
-  nearSLA: { id: string; ticketNumber: string; timeLeft: string }[];
-  performance: { assigned: number; closed: number; avgRes: number; sla: number; rating: number };
-  pendingResponse: { id: string; ticketNumber: string; reason: string; waitTime: string }[];
-  workload: { assigned: number; recommended: number; status: "Healthy" | "Heavy Workload" };
   notifications: { grievances: number; slaAlerts: number; escalations: number };
-  followups: { time: string; text: string }[];
 }
 
 export default function HRDashboardClient({ data }: { data: DashboardData }) {
   
-  // Custom Funnel/Pipeline rendering using basic divs for a horizontal funnel look
-  const totalPipeline = Math.max(...data.pipeline.map(d => d.value), 1)
+
 
   // Custom Colors
   const COLORS = ['#6366f1', '#8b5cf6', '#d946ef', '#f43f5e', '#f97316', '#eab308', '#22c55e']
@@ -132,53 +112,6 @@ export default function HRDashboardClient({ data }: { data: DashboardData }) {
           </div>
         </div>
 
-        {/* Closed Today */}
-        <div className="card-hover rounded-xl border bg-white p-5 shadow-sm dark:bg-slate-900 dark:border-slate-800 border-t-4 border-t-emerald-500">
-          <div className="flex flex-row items-center justify-between pb-2">
-            <h3 className="tracking-tight text-sm font-medium text-slate-500">Closed Today</h3>
-            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-          </div>
-          <div className="flex items-baseline gap-2">
-            <div className="text-3xl font-bold text-slate-900 dark:text-white">{data.kpis.closedToday}</div>
-          </div>
-        </div>
-
-        {/* Avg Resolution */}
-        <div className="card-hover rounded-xl border bg-white p-5 shadow-sm dark:bg-slate-900 dark:border-slate-800 border-t-4 border-t-cyan-500">
-          <div className="flex flex-row items-center justify-between pb-2">
-            <h3 className="tracking-tight text-sm font-medium text-slate-500">Avg Resolution Time</h3>
-            <Clock className="h-4 w-4 text-cyan-500" />
-          </div>
-          <div className="flex items-baseline gap-2">
-            <div className="text-3xl font-bold text-slate-900 dark:text-white">{data.kpis.avgResolutionDays} <span className="text-sm font-medium text-slate-500">Days</span></div>
-          </div>
-        </div>
-
-        {/* SLA Compliance */}
-        <div className="card-hover rounded-xl border bg-white p-5 shadow-sm dark:bg-slate-900 dark:border-slate-800 border-t-4 border-t-purple-500">
-          <div className="flex flex-row items-center justify-between pb-2">
-            <h3 className="tracking-tight text-sm font-medium text-slate-500">SLA Compliance</h3>
-            <TrendingUp className="h-4 w-4 text-purple-500" />
-          </div>
-          <div className="flex items-baseline gap-2">
-            <div className="text-3xl font-bold text-slate-900 dark:text-white">{data.kpis.slaCompliancePct}%</div>
-            <span className={`text-xs font-medium flex items-center ${data.kpis.slaCompliancePct >= 95 ? 'text-emerald-600' : 'text-amber-600'}`}>
-              Target 95%
-            </span>
-          </div>
-        </div>
-
-        {/* Satisfaction */}
-        <div className="card-hover rounded-xl border bg-white p-5 shadow-sm dark:bg-slate-900 dark:border-slate-800 border-t-4 border-t-pink-500">
-          <div className="flex flex-row items-center justify-between pb-2">
-            <h3 className="tracking-tight text-sm font-medium text-slate-500">Employee Satisfaction</h3>
-            <Star className="h-4 w-4 text-pink-500 fill-pink-500" />
-          </div>
-          <div className="flex items-baseline gap-2">
-            <div className="text-3xl font-bold text-slate-900 dark:text-white">{data.kpis.employeeSatisfaction}</div>
-            <span className="text-sm font-medium text-slate-500">/ 5.0</span>
-          </div>
-        </div>
       </div>
 
       {/* Row 2: Urgent Cases + Activity Feed */}
@@ -246,201 +179,7 @@ export default function HRDashboardClient({ data }: { data: DashboardData }) {
         </div>
       </div>
 
-      {/* Row 3: Pipeline & Categories */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Investigation Pipeline */}
-        <div className="rounded-xl border bg-white p-6 shadow-sm dark:bg-slate-900 dark:border-slate-800">
-          <h3 className="font-semibold text-slate-900 dark:text-white mb-6">Investigation Pipeline</h3>
-          <div className="space-y-4">
-            {data.pipeline.map((stage, index) => {
-              const width = Math.max((stage.value / totalPipeline) * 100, 2)
-              return (
-                <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                  <div className="w-full sm:w-24 text-sm font-medium text-slate-600 dark:text-slate-400 sm:text-right">{stage.name}</div>
-                  <div className="flex-1 h-6 bg-slate-100 dark:bg-slate-800 rounded-md sm:rounded-l-none sm:rounded-r-md overflow-hidden flex items-center w-full">
-                    <div 
-                      className="h-full bg-indigo-500 flex items-center px-2 transition-all duration-1000 ease-out" 
-                      style={{ width: `${width}%`, backgroundColor: COLORS[index % COLORS.length] }}
-                    >
-                    </div>
-                    <span className="ml-3 text-sm font-bold text-slate-700 dark:text-slate-300">{stage.value}</span>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
 
-        {/* Category Distribution */}
-        <div className="rounded-xl border bg-white p-6 shadow-sm dark:bg-slate-900 dark:border-slate-800 h-[300px]">
-          <h3 className="font-semibold text-slate-900 dark:text-white mb-4">Complaints by Category</h3>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data.categories} layout="vertical" margin={{ top: 0, right: 30, left: 20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#334155" opacity={0.2} />
-              <XAxis type="number" hide />
-              <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} width={100} />
-              <RechartsTooltip 
-                cursor={{fill: 'rgba(0,0,0,0.05)'}} 
-                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-              />
-              <Bar dataKey="value" fill="#8b5cf6" radius={[0, 4, 4, 0]} barSize={20}>
-                {data.categories.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Row 4: Department Heatmap & SLA Health */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Department Distribution */}
-        <div className="lg:col-span-1 rounded-xl border bg-white p-6 shadow-sm dark:bg-slate-900 dark:border-slate-800">
-          <h3 className="font-semibold text-slate-900 dark:text-white mb-4">Department Heatmap</h3>
-          <div className="space-y-3">
-            {data.departments.map((dept, index) => {
-              const maxVal = Math.max(...data.departments.map(d => d.value), 1)
-              const pct = (dept.value / maxVal) * 100
-              // Color intensity based on percentage
-              const intensity = pct > 80 ? 'bg-rose-500' : pct > 50 ? 'bg-orange-400' : pct > 20 ? 'bg-amber-300' : 'bg-green-300'
-              return (
-                <div key={index}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="font-medium text-slate-700 dark:text-slate-300">{dept.name}</span>
-                    <span className="text-slate-500">{dept.value}</span>
-                  </div>
-                  <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
-                    <div className={`h-2 rounded-full ${intensity}`} style={{ width: `${pct}%` }}></div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Monthly Trend */}
-        <div className="lg:col-span-2 rounded-xl border bg-white p-6 shadow-sm dark:bg-slate-900 dark:border-slate-800">
-          <h3 className="font-semibold text-slate-900 dark:text-white mb-4">Monthly Grievance Trend</h3>
-          <div className="h-[220px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data.monthlyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorCases" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.2} />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
-                <RechartsTooltip 
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                />
-                <Area type="monotone" dataKey="cases" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorCases)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* Row 5: Quick Actions, Workload, Performance */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        
-        {/* SLA & Workload & Performance (Stacked) */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* SLA Health Meter */}
-          <div className="rounded-xl border bg-white p-6 shadow-sm dark:bg-slate-900 dark:border-slate-800 text-center">
-            <h3 className="font-semibold text-slate-900 dark:text-white mb-2">SLA Health</h3>
-            <div className="text-4xl font-black text-slate-900 dark:text-white my-4">{data.kpis.slaCompliancePct}%</div>
-            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-3 mb-2">
-              <div 
-                className={`h-3 rounded-full ${data.kpis.slaCompliancePct >= 95 ? 'bg-emerald-500' : 'bg-amber-500'}`} 
-                style={{ width: `${data.kpis.slaCompliancePct}%` }}
-              ></div>
-            </div>
-            <p className="text-xs font-medium text-slate-500">Target: 95%</p>
-          </div>
-
-          {/* Workload */}
-          <div className="rounded-xl border bg-white p-6 shadow-sm dark:bg-slate-900 dark:border-slate-800">
-            <h3 className="font-semibold text-slate-900 dark:text-white mb-4">My Workload</h3>
-            <div className="flex justify-between mb-2">
-              <span className="text-sm text-slate-500">Assigned</span>
-              <span className="text-sm font-bold text-slate-900 dark:text-white">{data.workload.assigned}</span>
-            </div>
-            <div className="flex justify-between mb-4">
-              <span className="text-sm text-slate-500">Recommended</span>
-              <span className="text-sm font-bold text-slate-900 dark:text-white">{data.workload.recommended}</span>
-            </div>
-            <div className={`text-center py-2 rounded-md font-semibold text-sm ${data.workload.status === 'Healthy' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'}`}>
-              {data.workload.status === 'Healthy' ? 'Healthy' : '⚠ Heavy Workload'}
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions Panel */}
-        <div className="lg:col-span-2 rounded-xl border bg-white p-6 shadow-sm dark:bg-slate-900 dark:border-slate-800">
-          <h3 className="font-semibold text-slate-900 dark:text-white mb-6">Quick Actions</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <Link href="/hr/cases" className="flex items-center gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all group">
-              <div className="bg-indigo-100 dark:bg-indigo-500/20 p-3 rounded-lg text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
-                <CheckSquare className="h-5 w-5" />
-              </div>
-              <span className="font-medium text-slate-700 dark:text-slate-300">Assign Case</span>
-            </Link>
-            
-            <Link href="/hr/cases" className="flex items-center gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all group">
-              <div className="bg-blue-100 dark:bg-blue-500/20 p-3 rounded-lg text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
-                <MessageSquare className="h-5 w-5" />
-              </div>
-              <span className="font-medium text-slate-700 dark:text-slate-300">Add Internal Note</span>
-            </Link>
-            
-            <Link href="/hr/cases" className="flex items-center gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-all group">
-              <div className="bg-amber-100 dark:bg-amber-500/20 p-3 rounded-lg text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform">
-                <FileText className="h-5 w-5" />
-              </div>
-              <span className="font-medium text-slate-700 dark:text-slate-300">Contact Employee</span>
-            </Link>
-
-            <Link href="/hr/reports" className="flex items-center gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-all group">
-              <div className="bg-emerald-100 dark:bg-emerald-500/20 p-3 rounded-lg text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
-                <FileOutput className="h-5 w-5" />
-              </div>
-              <span className="font-medium text-slate-700 dark:text-slate-300">Generate Report</span>
-            </Link>
-          </div>
-        </div>
-
-        {/* My Performance & Pending Response */}
-        <div className="lg:col-span-1 space-y-6">
-          <div className="rounded-xl border bg-white p-6 shadow-sm dark:bg-slate-900 dark:border-slate-800">
-            <h3 className="font-semibold text-slate-900 dark:text-white mb-4">My Performance</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-sm text-slate-500">Assigned</span>
-                <span className="text-sm font-bold text-slate-900 dark:text-white">{data.performance.assigned}</span>
-              </div>
-              <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-sm text-slate-500">Closed</span>
-                <span className="text-sm font-bold text-slate-900 dark:text-white">{data.performance.closed}</span>
-              </div>
-              <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-sm text-slate-500">Avg Resolution</span>
-                <span className="text-sm font-bold text-slate-900 dark:text-white">{data.performance.avgRes} <span className="text-xs font-normal text-slate-400">Days</span></span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-500">Rating</span>
-                <span className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1">
-                  <Star className="h-3 w-3 text-amber-500 fill-amber-500" /> {data.performance.rating}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
