@@ -113,13 +113,6 @@ export default async function HRCasesPage() {
             <span><strong className="font-medium text-slate-700 dark:text-slate-200">{resolvedToday}</strong> Resolved Today</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Link href="/submit">
-            <button className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium transition-colors rounded-md bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
-              <Plus className="h-4 w-4 mr-2" /> Create Grievance
-            </button>
-          </Link>
-        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
