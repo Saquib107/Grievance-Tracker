@@ -46,8 +46,6 @@ export default function HRDashboardClient({ data }: { data: DashboardData }) {
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-500"></span> Assigned {data.kpis.assignedToMe}</span>
               <span className="hidden md:block w-px h-3 bg-slate-300 dark:bg-slate-700"></span>
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span> Overdue {data.kpis.overdueSLA}</span>
-              <span className="hidden md:block w-px h-3 bg-slate-300 dark:bg-slate-700"></span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Closed {data.kpis.closedToday}</span>
             </div>
             
 
