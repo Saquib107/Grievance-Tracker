@@ -27,8 +27,6 @@ export default function HRLayout({ user, badges, children }: { user: any, badges
     { href: "/hr/reports", label: "Reports", icon: FileText },
   ]
 
-  const lastSyncTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-
   const getBreadcrumb = () => {
     if (pathname === "/hr") return "Dashboard"
     if (pathname.includes("/hr/approvals")) return "Pending Approvals"
@@ -115,9 +113,8 @@ export default function HRLayout({ user, badges, children }: { user: any, badges
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <div className="flex justify-between items-center text-[10px] text-slate-500 px-2 pt-2">
+          <div className="flex justify-center items-center text-[10px] text-slate-500 px-2 pt-2">
             <span>GrievanceHub v1.0</span>
-            <span>Last Sync: {lastSyncTime}</span>
           </div>
         </div>
       </aside>
@@ -200,11 +197,6 @@ export default function HRLayout({ user, badges, children }: { user: any, badges
 
             {/* Right side: Last Updated, Notifications */}
             <div className="flex items-center justify-end gap-3 w-1/4">
-              <div className="hidden lg:flex items-center text-xs font-medium text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full whitespace-nowrap">
-                <Clock className="h-3.5 w-3.5 mr-1.5" />
-                Updated {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-              </div>
-
               <NotificationBell />
             </div>
           </div>

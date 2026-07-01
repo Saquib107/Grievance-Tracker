@@ -24,11 +24,7 @@ export default function AdminDashboardClient({
   monthlyData: any[],
   recentActivity: any[]
 }) {
-  const [lastUpdated, setLastUpdated] = useState("")
-
-  useEffect(() => {
-    setLastUpdated(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }))
-  }, [])
+  // State removed
 
   return (
     <div className="space-y-8 pb-8">
@@ -40,11 +36,7 @@ export default function AdminDashboardClient({
         </div>
         
         <div className="flex flex-col items-end gap-3">
-          <div className="text-sm font-medium text-slate-500 flex items-center bg-white border border-slate-200 px-3 py-1.5 rounded-md shadow-sm dark:bg-slate-900 dark:border-slate-800">
-            <Clock className="w-4 h-4 mr-2 text-indigo-500" />
-            Last Updated: {lastUpdated || "..."}
-          </div>
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium transition-colors rounded-md bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
                 Quick Actions <ChevronDown className="h-4 w-4 ml-2" />
