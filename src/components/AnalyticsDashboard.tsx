@@ -14,8 +14,7 @@ const YAxis = dynamic(() => import("recharts").then(mod => mod.YAxis), { ssr: fa
 const CartesianGrid = dynamic(() => import("recharts").then(mod => mod.CartesianGrid), { ssr: false })
 const RechartsTooltip = dynamic(() => import("recharts").then(mod => mod.Tooltip), { ssr: false })
 const ResponsiveContainer = dynamic(() => import("recharts").then(mod => mod.ResponsiveContainer), { ssr: false })
-const LineChart = dynamic(() => import("recharts").then(mod => mod.LineChart), { ssr: false })
-const Line = dynamic(() => import("recharts").then(mod => mod.Line), { ssr: false })
+
 const PieChart = dynamic(() => import("recharts").then(mod => mod.PieChart), { ssr: false })
 const Pie = dynamic(() => import("recharts").then(mod => mod.Pie), { ssr: false })
 const Cell = dynamic(() => import("recharts").then(mod => mod.Cell), { ssr: false })
@@ -49,18 +48,12 @@ const AnalyticsDashboard = React.memo(function AnalyticsDashboard({
   stats,
   monthlyData = [],
   priorityData = [],
-  statusData = [],
-  deptData = [],
-  slaTrendData = [],
-  resolutionTimeData = []
+  statusData = []
 }: { 
   stats: any,
   monthlyData?: any[],
   priorityData?: any[],
-  statusData?: any[],
-  deptData?: any[],
-  slaTrendData?: any[],
-  resolutionTimeData?: any[]
+  statusData?: any[]
 }) {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10">
@@ -132,7 +125,7 @@ const AnalyticsDashboard = React.memo(function AnalyticsDashboard({
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Monthly Trends */}
-        <Card className="card-hover">
+        <Card className="card-hover lg:col-span-2">
           <CardHeader>
             <CardTitle className="text-lg text-slate-800 dark:text-slate-100">Monthly Trend</CardTitle>
             <CardDescription>Volume of grievances filed vs resolved.</CardDescription>
@@ -151,62 +144,6 @@ const AnalyticsDashboard = React.memo(function AnalyticsDashboard({
           </CardContent>
         </Card>
 
-        {/* SLA Trend */}
-        <Card className="card-hover">
-          <CardHeader>
-            <CardTitle className="text-lg text-slate-800 dark:text-slate-100">Monthly SLA Compliance</CardTitle>
-            <CardDescription>Percentage of cases resolved within SLA deadline.</CardDescription>
-          </CardHeader>
-          <CardContent className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={slaTrendData} margin={{ top: 20, right: 30, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
-                <YAxis domain={[80, 100]} axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
-                <RechartsTooltip content={<CustomTooltip />} />
-                <Line type="monotone" dataKey="compliance" name="compliance" stroke="#10b981" strokeWidth={3} dot={{r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff'}} activeDot={{r: 6}} />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Department Analysis */}
-        <Card className="card-hover">
-          <CardHeader>
-            <CardTitle className="text-lg text-slate-800 dark:text-slate-100">Department Analysis</CardTitle>
-            <CardDescription>Grievance volume by employee department.</CardDescription>
-          </CardHeader>
-          <CardContent className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart layout="vertical" data={deptData} margin={{ top: 20, right: 30, left: 20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
-                <XAxis type="number" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
-                <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
-                <RechartsTooltip content={<CustomTooltip />} cursor={{fill: '#f1f5f9', opacity: 0.4}} />
-                <Bar dataKey="cases" name="Cases" fill="#0ea5e9" radius={[0, 4, 4, 0]} barSize={24} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Resolution Time */}
-        <Card className="card-hover">
-          <CardHeader>
-            <CardTitle className="text-lg text-slate-800 dark:text-slate-100">Average Resolution Time</CardTitle>
-            <CardDescription>Average days taken to resolve a grievance.</CardDescription>
-          </CardHeader>
-          <CardContent className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={resolutionTimeData} margin={{ top: 20, right: 30, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
-                <YAxis domain={[0, 5]} axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
-                <RechartsTooltip content={<CustomTooltip />} />
-                <Line type="monotone" dataKey="days" name="days" stroke="#f59e0b" strokeWidth={3} dot={{r: 4, fill: '#f59e0b', strokeWidth: 2, stroke: '#fff'}} activeDot={{r: 6}} />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
 
         {/* Priority & Status Breakdown */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:col-span-2">
