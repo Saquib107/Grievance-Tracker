@@ -45,7 +45,6 @@ export default function AdminDashboardClient({
               <Link href="/admin/employees"><DropdownMenuItem className="cursor-pointer"><UserPlus className="mr-2 h-4 w-4" /> Add Employee</DropdownMenuItem></Link>
               <Link href="/admin/sites"><DropdownMenuItem className="cursor-pointer"><Building2 className="mr-2 h-4 w-4" /> Add Site</DropdownMenuItem></Link>
               <Link href="/admin/users"><DropdownMenuItem className="cursor-pointer"><Users className="mr-2 h-4 w-4" /> Assign HR</DropdownMenuItem></Link>
-              <Link href="/public/submit" target="_blank"><DropdownMenuItem className="cursor-pointer text-indigo-600 focus:text-indigo-600"><Plus className="mr-2 h-4 w-4" /> Create Grievance</DropdownMenuItem></Link>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
