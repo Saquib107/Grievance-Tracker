@@ -152,30 +152,32 @@ const AnalyticsDashboard = React.memo(function AnalyticsDashboard({
             <CardHeader>
               <CardTitle className="text-lg text-slate-800 dark:text-slate-100">Status Distribution</CardTitle>
             </CardHeader>
-            <CardContent className="h-64 flex items-center justify-center relative">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={statusData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {statusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={statusColors[index % statusColors.length]} />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip content={<CustomTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col space-y-2 text-sm">
+            <CardContent className="flex flex-col sm:flex-row items-center justify-center gap-6 py-6 h-auto sm:h-72">
+              <div className="w-full sm:w-1/2 h-64 sm:h-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={statusData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {statusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={statusColors[index % statusColors.length]} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="w-full sm:w-1/2 flex flex-wrap sm:flex-col justify-center gap-3 sm:gap-2 text-sm">
                 {statusData.map((entry, index) => (
-                  <div key={entry.name} className="flex items-center">
-                    <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: statusColors[index % statusColors.length] }}></div>
-                    <span className="text-slate-600 dark:text-slate-400 font-medium">{entry.name}</span>
+                  <div key={entry.name} className="flex items-center min-w-[120px]">
+                    <div className="w-3 h-3 rounded-full mr-2 shrink-0" style={{ backgroundColor: statusColors[index % statusColors.length] }}></div>
+                    <span className="text-slate-600 dark:text-slate-400 font-medium truncate">{entry.name}</span>
                   </div>
                 ))}
               </div>
@@ -187,29 +189,31 @@ const AnalyticsDashboard = React.memo(function AnalyticsDashboard({
             <CardHeader>
               <CardTitle className="text-lg text-slate-800 dark:text-slate-100">Priority Distribution</CardTitle>
             </CardHeader>
-            <CardContent className="h-64 flex items-center justify-center relative">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={priorityData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={0}
-                    outerRadius={90}
-                    dataKey="value"
-                  >
-                    {priorityData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={priorityColors[index % priorityColors.length]} />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip content={<CustomTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col space-y-2 text-sm">
+            <CardContent className="flex flex-col sm:flex-row items-center justify-center gap-6 py-6 h-auto sm:h-72">
+              <div className="w-full sm:w-1/2 h-64 sm:h-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={priorityData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={0}
+                      outerRadius={90}
+                      dataKey="value"
+                    >
+                      {priorityData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={priorityColors[index % priorityColors.length]} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="w-full sm:w-1/2 flex flex-wrap sm:flex-col justify-center gap-3 sm:gap-2 text-sm">
                 {priorityData.map((entry, index) => (
-                  <div key={entry.name} className="flex items-center">
-                    <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: priorityColors[index % priorityColors.length] }}></div>
-                    <span className="text-slate-600 dark:text-slate-400 font-medium">{entry.name}</span>
+                  <div key={entry.name} className="flex items-center min-w-[120px]">
+                    <div className="w-3 h-3 rounded-full mr-2 shrink-0" style={{ backgroundColor: priorityColors[index % priorityColors.length] }}></div>
+                    <span className="text-slate-600 dark:text-slate-400 font-medium truncate">{entry.name}</span>
                   </div>
                 ))}
               </div>
