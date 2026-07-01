@@ -6,7 +6,7 @@ import { signOut } from "next-auth/react"
 import { ShieldAlert, LayoutDashboard, Inbox, PieChart, Users, Settings, LogOut, FileText, UserPlus, Bell, ChevronDown, User, Search, Clock, ChevronRight, Menu } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-
+import { NotificationBell } from "@/components/ui/notification-bell"
 import {
   Sheet,
   SheetContent,
@@ -197,12 +197,12 @@ export default function HRLayout({ user, badges, children }: { user: any, badges
 
             {/* Right side: Last Updated, Notifications */}
             <div className="flex items-center justify-end gap-3 w-1/4">
-
+              <NotificationBell />
             </div>
           </div>
 
           <div className="md:hidden flex items-center gap-4">
-
+            <NotificationBell />
             <DropdownMenu>
               <DropdownMenuTrigger className="outline-none">
                 <Avatar className="h-8 w-8 ring-2 ring-slate-200">

@@ -50,14 +50,7 @@ export default function HRDashboardClient({ data }: { data: DashboardData }) {
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Closed {data.kpis.closedToday}</span>
             </div>
             
-            <div className="flex gap-2">
-              <button className="relative p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors bg-slate-50 dark:bg-slate-800 rounded-full">
-                <Bell className="h-5 w-5" />
-                {(data.notifications.grievances + data.notifications.slaAlerts + data.notifications.escalations) > 0 && (
-                  <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900"></span>
-                )}
-              </button>
-            </div>
+
           </div>
         </div>
       </div>
