@@ -211,11 +211,32 @@ export default function HRLayout({ user, badges, children }: { user: any, badges
 
           <div className="md:hidden flex items-center gap-4">
             <NotificationBell />
-            <Avatar className="h-8 w-8 ring-2 ring-slate-200">
-              <AvatarFallback className="bg-slate-200 text-slate-600">
-                {user.name?.charAt(0) || "U"}
-              </AvatarFallback>
-            </Avatar>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="outline-none">
+                <Avatar className="h-8 w-8 ring-2 ring-slate-200">
+                  <AvatarImage src={user.image || ""} alt={user.name || "User"} />
+                  <AvatarFallback className="bg-slate-200 text-slate-600">
+                    {user.name?.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-[#111827]">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none text-slate-900 dark:text-white">{user.name}</p>
+                    <p className="text-xs leading-none text-slate-500">{user.role}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="text-red-600 dark:text-red-400 cursor-pointer"
+                  onClick={() => signOut({ callbackUrl: "/login" })}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
