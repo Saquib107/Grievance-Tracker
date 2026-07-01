@@ -197,12 +197,14 @@ export default function AdminLayout({ user, children }: { user: any, children: R
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-[#111827]">
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none text-slate-900 dark:text-white">{user.name}</p>
-                    <p className="text-xs leading-none text-slate-500">{user.role}</p>
-                  </div>
-                </DropdownMenuLabel>
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none text-slate-900 dark:text-white">{user.name}</p>
+                      <p className="text-xs leading-none text-slate-500">{user.role}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
                   className="text-red-600 dark:text-red-400 cursor-pointer"
