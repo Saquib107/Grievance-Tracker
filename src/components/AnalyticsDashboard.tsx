@@ -55,6 +55,17 @@ const AnalyticsDashboard = React.memo(function AnalyticsDashboard({
   priorityData?: any[],
   statusData?: any[]
 }) {
+
+  const mappedStatusData = statusData?.map((entry, index) => ({
+    ...entry,
+    fill: statusColors[index % statusColors.length]
+  })) || [];
+
+  const mappedPriorityData = priorityData?.map((entry, index) => ({
+    ...entry,
+    fill: priorityColors[index % priorityColors.length]
+  })) || [];
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10">
       
@@ -157,18 +168,14 @@ const AnalyticsDashboard = React.memo(function AnalyticsDashboard({
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={statusData}
+                      data={mappedStatusData}
                       cx="50%"
                       cy="50%"
                       innerRadius={60}
                       outerRadius={90}
                       paddingAngle={5}
                       dataKey="value"
-                    >
-                      {statusData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={statusColors[index % statusColors.length]} />
-                      ))}
-                    </Pie>
+                    />
                     <RechartsTooltip content={<CustomTooltip />} />
                   </PieChart>
                 </ResponsiveContainer>
@@ -194,17 +201,13 @@ const AnalyticsDashboard = React.memo(function AnalyticsDashboard({
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={priorityData}
+                      data={mappedPriorityData}
                       cx="50%"
                       cy="50%"
                       innerRadius={0}
                       outerRadius={90}
                       dataKey="value"
-                    >
-                      {priorityData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={priorityColors[index % priorityColors.length]} />
-                      ))}
-                    </Pie>
+                    />
                     <RechartsTooltip content={<CustomTooltip />} />
                   </PieChart>
                 </ResponsiveContainer>
